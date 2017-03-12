@@ -1,6 +1,11 @@
-let EMPTY = {}
+var qs = require('./qs')
 
-module.exports = function match (routes, url) {
+var EMPTY = {}
+
+module.exports = match
+module.exports.matchOne = matchOne
+
+function match (routes, url) {
   if (!url) return
   for (var i = 0; i < routes.length; i++) {
     if (matchOne(routes[i].pattern, url)) {
@@ -11,54 +16,65 @@ module.exports = function match (routes, url) {
 
 function matchOne (pattern, url) {
   if (!pattern) return false
-
-  let reg = /(?:\?([^#]*))?(#.*)?$/
-  let c = pattern.match(reg)
-  let matches = {}
-  let ret
-
   if (pattern === '*') return {}
 
+  let search = /(?:\?([^#]*))?(#.*)?$/
+  let originalUrl = url
+  let originalPattern = pattern
+  let c = url.match(search)
+  let params = {}
+  let query = {}
+  let hash = ''
+  let ret
+
   if (c && c[1]) {
-    let p = c[1].split('&')
-    for (let i = 0; i < p.length; i++) {
-      let r = p[i].split('=')
-      matches[decodeURIComponent(r[0])] = decodeURIComponent(r.slice(1).join('='))
-    }
+    query = qs.parse(c[1])
   }
 
-  pattern = segmentize(pattern.replace(reg, ''))
-  url = segmentize(url || '')
-  let max = Math.max(pattern.length, url.length)
+  if (c && c[2]) {
+    hash = c[2] || ''
+  }
+
+  url = segmentize(url.replace(search, ''))
+  pattern = segmentize(pattern || '')
+  let max = Math.max(url.length, pattern.length)
   for (let i = 0; i < max; i++) {
-    if (url[i] && url[i].charAt(0) === ':') {
-      let param = url[i].replace(/(^:|[+*?]+$)/g, '')
-      let flags = (url[i].match(/[+*?]+$/) || EMPTY)[0] || ''
-      let plus = ~flags.indexOf('+')
-      let star = ~flags.indexOf('*')
-      let val = pattern[i] || ''
+    if (pattern[i] && pattern[i].charAt(0) === ':') {
+      let param = pattern[i].replace(/(^:|[+*?]+$)/g, '')
+      let flags = (pattern[i].match(/[+*?]+$/) || EMPTY)[0] || ''
+      let plus = flags.indexOf('+') > -1
+      let star = flags.indexOf('*') > -1
+      let val = url[i] || ''
       if (!val && !star && (flags.indexOf('?') < 0 || plus)) {
         ret = false
         break
       }
-      matches[param] = decodeURIComponent(val)
+      params[param] = decodeURIComponent(val)
       if (plus || star) {
-        matches[param] = pattern.slice(i).map(decodeURIComponent).join('/')
+        params[param] = url.slice(i).map(decodeURIComponent).join('/')
         break
       }
-    } else if (url[i] !== pattern[i]) {
+    } else if (pattern[i] !== url[i]) {
       ret = false
       break
     }
   }
   if (ret === false) return false
-  return matches
+
+  return {
+    pattern: originalPattern,
+    path: originalUrl,
+    pathname: originalUrl.replace(search, ''),
+    params: params,
+    query: query,
+    hash: hash
+  }
 }
 
-function segmentize (pattern) {
-  return strip(pattern).split('/')
+function segmentize (url) {
+  return strip(url).split('/')
 }
 
-function strip (pattern) {
-  return pattern.replace(/(^\/+|\/+$)/g, '')
+function strip (url) {
+  return url.replace(/(^\/+|\/+$)/g, '')
 }
