@@ -1,0 +1,27 @@
+html, body {
+  height: 100%;
+  padding: 0;
+}
+
+body {
+  background: aliceblue;
+  font-size: 18px;
+  font-family: Helvetica;
+  display: flex;
+  /*align-items: center;
+  justify-content: center;*/
+}
+
+.App {
+
+}
+
+.Nav a {
+  display: inline-block;
+  padding: 8px;
+  margin: 2px;
+}
+
+.Content {
+  padding: 10px;
+}
