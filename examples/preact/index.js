@@ -6,7 +6,7 @@ if (module.hot) {
 }
 
 const Preact = require('preact')
-const createRouter = require('..')
+const createRouter = require('../..')
 require('./styles.css')
 
 const App = ({ router, children }) =>
