@@ -22,9 +22,9 @@ const router = createRouter([
     ['/bar/:id', (params) => 'bar ' + params.id],
     ['*', () => 'not found']
   ]
-]).start(render)
+]).start(onTransition)
 
-function render (route) {
+function onTransition (route) {
   let { path, params, data } = route
   // just logging instead of rendering to keep the example simple
   console.log('Matched', data.map(fn => fn()).join(' - '))
@@ -42,12 +42,10 @@ router.push('/bar/7', { query: { q: 1 } })
 router.current()
 // -> returns { pattern, params, path, pathname, query, hash, data }
 
-router.isActive('/bar/7')
-// -> true
-router.isActive('/bar/7?q=2')
-// -> true
-router.isActive('/bar/6')
-// -> false
+router.data('/bar/:id')
+// -> [() => 'all', (params) => 'bar ' + params.id]
+router.data({ pattenr: '/bar/:id' })
+// -> [() => 'all', (params) => 'bar ' + params.id]
 
 router.href('/bar/7', { query: { q: 1 } })
 // -> '/bar/7?q=1' or /#/bar7?q=1 in hash mode
@@ -65,10 +63,6 @@ Example usage with `preact`.
 
 ...
 
-### `route(pattern, ...data)`
-
-...
-
 ### `start(onTransition)`
 
 ...
@@ -77,9 +71,9 @@ Example usage with `preact`.
 
 ...
 
-### `isActive(url, options)`
+### `data(pattern|route)`
 
-...
+Exchange a route pattern or route object of shape { pattern } to the data associated with this route.
 
 ### `href(url, options)`
 

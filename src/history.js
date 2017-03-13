@@ -1,8 +1,8 @@
 var on = require('./on')
 
-module.exports = window.createHistory = function createHistory (options, onChange) {
+module.exports = function createHistory (options, onChange) {
   var mode = options.mode || 'history'
-  var root = clean(options.root || '/')
+  // var root = clean(options.root || '/')
 
   var memory = []
   var location = {}
@@ -44,6 +44,7 @@ module.exports = window.createHistory = function createHistory (options, onChang
         location[options.replace ? 'replace' : 'assign']('#' + url)
       } else if (mode === 'memory') {
         options.replace ? (memory[memory.length - 1] = url) : memory.push(url)
+        onPop()
       }
     },
 
@@ -53,7 +54,9 @@ module.exports = window.createHistory = function createHistory (options, onChang
   }
 
   function getUrl () {
-    return mode === 'history' ? getPath() : getHash().replace('#', '')
+    if (mode === 'history') return getPath()
+    if (mode === 'hash') return getHash().replace('#', '')
+    if (mode === 'memory') return memory[memory.length - 1]
   }
 
   function getPath () {

@@ -8,8 +8,10 @@ module.exports.matchOne = matchOne
 function match (routes, url) {
   if (!url) return
   for (var i = 0; i < routes.length; i++) {
-    if (matchOne(routes[i].pattern, url)) {
-      return routes[i]
+    const m = matchOne(routes[i].pattern, url)
+    if (m) {
+      m.data = routes[i].data
+      return m
     }
   }
 }

@@ -2,6 +2,7 @@ var match = require('./match')
 var links = require('./links')
 var flatten = require('./flatten')
 var createHistory = require('./history')
+var qs = require('./qs')
 
 module.exports = function createRouter (routes, options) {
   options = options || {}
@@ -23,12 +24,23 @@ module.exports = function createRouter (routes, options) {
   function transition (url) {
     var curr = router.current()
     if (!curr) return
-    onChange(curr)
+    onChange && onChange(curr)
   }
 
   var router = {
     current: function () {
       return match(routes, history.url())
+    },
+
+    data: function (route) {
+      if (typeof route !== 'string') {
+        route = route.pattern
+      }
+      for (var i = 0; i < routes.length; i++) {
+        if (routes[i].pattern === route) {
+          return routes[i].data
+        }
+      }
     },
 
     start: function (_onChange) {
@@ -48,12 +60,11 @@ module.exports = function createRouter (routes, options) {
       return router
     },
 
-    isActive: function (url, options) {
-
-    },
-
     href: function (pattern, options) {
-
+      if (options.query) {
+        return pattern + '?' + qs.stringify(options.query)
+      }
+      return pattern
     }
   }
 
