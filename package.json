@@ -3,6 +3,21 @@
   "version": "0.0.0",
   "main": "index.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/KidkArolis/tiny-router.git"
+  },
+  "keywords": [
+    "browser",
+    "router",
+    "small",
+    "clientside",
+    "universal",
+    "history",
+    "location",
+    "url"
+  ],
+  "author": "Karolis Narkevicius",
   "scripts": {
     "test": "standard && nyc mocha"
   },
