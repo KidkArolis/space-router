@@ -79,10 +79,8 @@ const router = window.router = createRouter(
 //   next()
 // }
 
-function render (route, next) {
-  let { data } = route
-
-  if (route.data.find(r => r.cancel)) {
+function render (route, data, next) {
+  if (data.find(r => r.cancel)) {
     return next && next(false)
   }
 

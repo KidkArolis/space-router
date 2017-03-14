@@ -7,7 +7,7 @@ test('createRouter() / .start(onTransition) / .push(url) / .stop()', () => {
   const calls = []
 
   const router = createTestRouter()
-  router.start(route => calls.push(route.data[0](route.params)))
+  router.start((route, data) => calls.push(data[0](route.params)))
 
   router.push('/foo')
   router.push('/user/5')
@@ -34,11 +34,8 @@ test('.current()', () => {
   router.push('/user/7/friends?a=1&b=2#abc')
 
   const curr = router.current()
-  curr.data[0] = curr.data[0](curr.params)
-  eq(curr, {
-    data: [
-      'friends=7'
-    ],
+  eq(curr.data[0](curr.route.params), 'friends=7')
+  eq(curr.route, {
     hash: '#abc',
     params: {
       id: '7'
@@ -57,7 +54,7 @@ test('.data(route)', () => {
   const router = createTestRouter().start()
 
   router.push('/user/7/friends?a=1&b=2#abc')
-  const friends = router.current()
+  const friends = router.current().route
   router.push('/foo')
 
   // access by pattern

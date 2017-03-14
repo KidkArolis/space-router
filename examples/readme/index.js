@@ -11,11 +11,11 @@ const router = createRouter(
   ]]
 ).start(onTransition)
 
-function onTransition (route) {
-  let { params, data } = route
+function onTransition (route, data) {
+  let { params } = route
   // just logging instead of rendering to keep the example simple
   console.log('Matched', '[' + data.map(fn => fn(params)).join(', ') + ']')
-}
+}}
 
 router.push('/channels')
 // -> Matched [all, channels]

@@ -10,8 +10,7 @@ function match (routes, url) {
   for (var i = 0; i < routes.length; i++) {
     const m = matchOne(routes[i].pattern, url)
     if (m) {
-      m.data = routes[i].data
-      return m
+      return { route: m, data: routes[i].data }
     }
   }
 }

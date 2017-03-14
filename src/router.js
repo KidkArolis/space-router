@@ -24,7 +24,7 @@ module.exports = function createRouter (routes, options) {
   function transition (url) {
     var curr = router.current()
     if (!curr) return
-    onChange && onChange(curr)
+    onChange && onChange(curr.route, curr.data)
   }
 
   var router = {
