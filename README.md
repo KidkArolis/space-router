@@ -2,9 +2,9 @@
 
 Minimal, yet awesome, batteries included universal router.
 
-Tiny router packs all the features you need to always keep your app in sync with the url. It's different from most other routers in that there is only a **single callback**. Use this callback to rerender your app or update your store on each url change.
+Soda router packs all the features you need to always keep your app in sync with the url. It's different from most other routers in that there is only a **single callback**. Use this callback to rerender your app or update your store on each url change.
 
-Tiny router:
+Soda router:
 
 - listens to url changes
 - supports popstate and hashchange
