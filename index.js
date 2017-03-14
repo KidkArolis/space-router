@@ -1,1 +1,1 @@
-module.exports = require('./src/tiny-router')
+module.exports = require('./src/router')

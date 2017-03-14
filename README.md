@@ -1,4 +1,4 @@
-# tiny-router
+# soda-router
 
 Minimal, yet awesome, batteries included universal router.
 
@@ -16,14 +16,14 @@ Tiny router:
 
 ## Usage
 
-        yarn add tiny-router
+        yarn add soda-router
 
 ## Example
 
 Example demonstrating most of the API.
 
 ```js
-const createRouter = require('tiny-router')
+const createRouter = require('soda-router')
 
 const router = createRouter(
   ['', () => 'app', [
@@ -69,7 +69,7 @@ Example usage with `preact`.
 
 ```
 
-You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these examples out. Clone the repo and run `jetpack tiny-router/examples/preact`.
+You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these examples out. Clone the repo and run `jetpack soda-router/examples/preact`.
 
 ## API
 

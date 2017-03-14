@@ -1,11 +1,11 @@
 {
-  "name": "tiny-router",
+  "name": "soda-router",
   "version": "0.1.0",
   "main": "index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/KidkArolis/tiny-router.git"
+    "url": "git://github.com/KidkArolis/soda-router.git"
   },
   "keywords": [
     "browser",

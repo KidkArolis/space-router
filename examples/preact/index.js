@@ -93,8 +93,6 @@ function render (route, next) {
 }
 
 // /**
-//  * tiny-router
-//  *
 //  * router([
 //  *   ['/:trackingId', Show],
 //  *   ['/']
