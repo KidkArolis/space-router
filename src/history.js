@@ -71,6 +71,6 @@ module.exports = function createHistory (options, onChange) {
   }
 
   function clean (url) {
-    return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '')
+    return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/'
   }
 }
