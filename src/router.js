@@ -6,10 +6,11 @@ var qs = require('./qs')
 
 module.exports = function createRouter (routes, options) {
   options = options || {}
+  options.mode = options.mode || 'history'
   routes = flatten(routes)
 
   var onChange
-  var history = createHistory({ mode: 'hash' }, transition)
+  var history = createHistory({ mode: options.mode }, transition)
   var unintercept = links.intercept(shouldIntercept, onClick)
 
   function shouldIntercept (a) {
