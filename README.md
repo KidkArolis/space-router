@@ -1,14 +1,13 @@
-# soda-router
+# space-router
 
 Minimal, yet awesome, batteries included universal router.
 
-Soda router packs all the features you need to always keep your app in sync with the url. It's different from most other routers in that there is only a **single callback**. Use this callback to rerender your app or update your store on each url change.
+Space router packs all the features you need to always keep your app in sync with the url. It's different from most other routers in that there is only a **single callback**. Use this callback to rerender your app or update your store on each url change.
 
-Soda router:
+Space router:
 
-- listens to url changes
-- supports popstate and hashchange
-- intercepts link clicks to pushState or update hash
+- listens to url changes via popstate and/or hashchange
+- handles all link clicks in your app
 - extracts url parameters and parses query strings
 - supports nested routes
 - should fit a very wide range of application architectures and frameworks
@@ -16,14 +15,14 @@ Soda router:
 
 ## Usage
 
-        yarn add soda-router
+    yarn add space-router
 
 ## Example
 
 Example demonstrating most of the API.
 
 ```js
-const createRouter = require('soda-router')
+const createRouter = require('space-router')
 
 const router = createRouter(
   ['', () => 'app', [
@@ -69,7 +68,7 @@ Example usage with `preact`.
 
 ```
 
-You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these examples out. Clone the repo and run `jetpack soda-router/examples/preact`.
+You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these examples out. Clone the repo and run `jetpack space-router/examples/preact`.
 
 ## API
 

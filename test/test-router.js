@@ -1,7 +1,7 @@
 const { eq } = require('@briancavalier/assert')
 const createRouter = require('..')
 
-suite('soda-router')
+suite('space-router')
 
 test('createRouter() / .start(onTransition) / .push(url) / .stop()', () => {
   const calls = []

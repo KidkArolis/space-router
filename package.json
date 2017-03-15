@@ -1,11 +1,11 @@
 {
-  "name": "soda-router",
+  "name": "space-router",
   "version": "0.1.0",
   "main": "index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/KidkArolis/soda-router.git"
+    "url": "git://github.com/KidkArolis/space-router.git"
   },
   "keywords": [
     "browser",
