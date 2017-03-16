@@ -146,10 +146,11 @@ Generate a url. Useful if you want to append query string or if you're using mix
 
 ## Missing features
 
-Space router **does not** do the following:
+Space router **does not** do the following yet:
 
 - support custom root/base url when using pushState
 - support async transitions, often this is done at the view layer nowadays, but we could beforeTransition/next hooks if you have a use case
+- support blocking transitions with a confirmation
 - handle scroll positions, browsers are starting to do that natively (see this article on [scroll restoration](https://reacttraining.com/react-router/web/guides/scroll-restoration))
 
 [Post an issue](https://github.com/KidkArolis/space-router/issues/new) and I might add these features.
