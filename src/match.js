@@ -8,7 +8,7 @@ module.exports.matchOne = matchOne
 function match (routes, url) {
   if (!url) return
   for (var i = 0; i < routes.length; i++) {
-    const m = matchOne(routes[i].pattern, url)
+    var m = matchOne(routes[i].pattern, url)
     if (m) {
       return { route: m, data: routes[i].data }
     }
@@ -19,14 +19,14 @@ function matchOne (pattern, url) {
   if (!pattern) return false
   if (pattern === '*') return {}
 
-  let search = /(?:\?([^#]*))?(#.*)?$/
-  let originalUrl = url
-  let originalPattern = pattern
-  let c = url.match(search)
-  let params = {}
-  let query = {}
-  let hash = ''
-  let ret
+  var search = /(?:\?([^#]*))?(#.*)?$/
+  var originalUrl = url
+  var originalPattern = pattern
+  var c = url.match(search)
+  var params = {}
+  var query = {}
+  var hash = ''
+  var ret
 
   if (c && c[1]) {
     query = qs.parse(c[1])
@@ -38,14 +38,14 @@ function matchOne (pattern, url) {
 
   url = segmentize(url.replace(search, ''))
   pattern = segmentize(pattern || '')
-  let max = Math.max(url.length, pattern.length)
-  for (let i = 0; i < max; i++) {
+  var max = Math.max(url.length, pattern.length)
+  for (var i = 0; i < max; i++) {
     if (pattern[i] && pattern[i].charAt(0) === ':') {
-      let param = pattern[i].replace(/(^:|[+*?]+$)/g, '')
-      let flags = (pattern[i].match(/[+*?]+$/) || EMPTY)[0] || ''
-      let plus = flags.indexOf('+') > -1
-      let star = flags.indexOf('*') > -1
-      let val = url[i] || ''
+      var param = pattern[i].replace(/(^:|[+*?]+$)/g, '')
+      var flags = (pattern[i].match(/[+*?]+$/) || EMPTY)[0] || ''
+      var plus = flags.indexOf('+') > -1
+      var star = flags.indexOf('*') > -1
+      var val = url[i] || ''
       if (!val && !star && (flags.indexOf('?') < 0 || plus)) {
         ret = false
         break

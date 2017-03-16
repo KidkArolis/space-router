@@ -21,12 +21,14 @@
   "scripts": {
     "test": "standard && nyc mocha"
   },
+  "dependencies": {},
   "devDependencies": {
     "@briancavalier/assert": "^3.4.0",
     "mocha": "^3.2.0",
     "np": "^2.12.0",
     "nyc": "^10.1.2",
-    "standard": "^9.0.1"
+    "standard": "^9.0.1",
+    "standard5": "^1.1.1"
   },
   "standard": {
     "global": [
@@ -34,5 +36,10 @@
       "test"
     ]
   },
-  "dependencies": {}
+  "standard5": {
+    "ignore": [
+      "examples",
+      "test"
+    ]
+  }
 }
