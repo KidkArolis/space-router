@@ -5,15 +5,15 @@ var createHistory = require('./history')
 var defaultQs = require('./qs')
 
 module.exports = function createRouter (routes, options) {
-  var qs = options.qs || defaultQs
-
   options = options || {}
+
   options.mode = options.mode || 'history'
   options.interceptLinks = options.interceptLinks !== false
   routes = flatten(routes)
 
   var onTransition
   var history
+  var qs = options.qs || defaultQs
   var unintercept = options.interceptLinks && links.intercept(shouldIntercept, onClick)
 
   function shouldIntercept (url) {
