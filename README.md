@@ -75,25 +75,30 @@ You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these exampl
 ### `createRouter(routes, options)`
 
 * `routes` an array of arrays of route definitions, e.g. ['/:pattern', Component] or ['/:pattern', Component, [...children...]]
-* `options` object of shape { mode, root, interceptLinks, qs }
+* `options` object of shape { mode, interceptLinks, qs }
 
 ### `start(onTransition)`
 
 Start the routing, will immediately call `onTransition` based on the current URL.
 
+* `onTransition` is called with `(route, data)`
+  - `route` is an object of shape `{ pattern, path, pathname, params, query, hash }`
+  - `data` is an array of datas associated with this route
+
 ### `stop()`
 
-Stop the routing, remove DOM `click` and `popstate` listeners.
+Stop the routing, remove DOM `click` and `popstate/hashchange` listeners.
 
 ### `push(url, options)`
 
-Navigate to a url. Will call `onTransition`.
+Navigate to a url. Updates browser URL and calls `onTransition`.
 
-* `options` object of shape { replace, query }
+- `url` a relative url string
+- `options` an object of shape `{ replace, query }`
 
-### `data(pattern|route)`
+### `data(pattern)`
 
-Exchange a route pattern or route object of shape { pattern } to the array of data associated with this route.
+Exchange a route pattern to the array of data associated with this route. Useful when implementing a stateless pattern, where current route state is stored in a central store, and rendering logic needs to look up the component(s) associated with the given route.
 
 ### `href(url, options)`
 

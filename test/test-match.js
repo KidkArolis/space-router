@@ -1,4 +1,5 @@
-const { eq } = require('@briancavalier/assert')
+const eq = require('assert').deepEqual
+const qs = require('../src/qs')
 const match = require('../src/match').matchOne
 
 suite('match')
@@ -42,14 +43,23 @@ test('match required splat param segments', () => {
 })
 
 test('match catch all', () => {
-  eq(match('*', '/'), {})
-  eq(match('*', '/a'), {})
-  eq(match('*', '/a/b'), {})
-  eq(match('*', '/a/b/c'), {})
+  eq(match('*', '/some/thing?abc=1', qs), {
+    path: '/some/thing?abc=1',
+    pathname: '/some/thing',
+    pattern: '*',
+    params: {},
+    query: {
+      abc: '1'
+    },
+    hash: ''
+  })
+  eq(!!match('*', '/a', qs), true)
+  eq(!!match('*', '/a/b', qs), true)
+  eq(!!match('*', '/a/b/c', qs), true)
 })
 
 test('match query params', () => {
-  eq(match('/bar/:foo', '/bar/baz?q=s#abc'), {
+  eq(match('/bar/:foo', '/bar/baz?q=s#abc', qs), {
     path: '/bar/baz?q=s#abc',
     pathname: '/bar/baz',
     pattern: '/bar/:foo',

@@ -7,15 +7,10 @@ var on = require('./on')
 
 module.exports.intercept = function intercept (matches, fn) {
   if (typeof document === 'undefined') return
-  return delegate(document, 'click', function (e, el) {
-    if (shouldIntercept(e, el, matches)) fn(e, el)
-  })
-}
-
-function delegate (el, type, fn) {
-  return on(el, type, function handleEvent (e) {
+  return on(document, 'click', function (e) {
     var el = a(e.target)
-    if (el) fn(e, el)
+    var href = el && el.getAttribute('href')
+    if (el && shouldIntercept(e, href, matches)) fn(e, href)
   })
 }
 

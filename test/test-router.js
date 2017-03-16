@@ -1,4 +1,4 @@
-const { eq } = require('@briancavalier/assert')
+const eq = require('assert').deepEqual
 const createRouter = require('..')
 
 suite('space-router')
@@ -7,7 +7,9 @@ test('createRouter() / .start(onTransition) / .push(url) / .stop()', () => {
   const calls = []
 
   const router = createTestRouter()
-  router.start((route, data) => calls.push(data[0](route.params)))
+  router.start((route, data) => {
+    calls.push(data[0](route.params))
+  })
 
   router.push('/foo')
   router.push('/user/5')
@@ -28,39 +30,16 @@ test('createRouter() / .start(onTransition) / .push(url) / .stop()', () => {
   router.stop()
 })
 
-test('.current()', () => {
-  const router = createTestRouter().start()
-
-  router.push('/user/7/friends?a=1&b=2#abc')
-
-  const curr = router.current()
-  eq(curr.data[0](curr.route.params), 'friends=7')
-  eq(curr.route, {
-    hash: '#abc',
-    params: {
-      id: '7'
-    },
-    path: '/user/7/friends?a=1&b=2#abc',
-    pathname: '/user/7/friends',
-    pattern: '/user/:id/friends',
-    query: {
-      a: '1',
-      b: '2'
-    }
-  })
-})
-
 test('.data(route)', () => {
-  const router = createTestRouter().start()
+  let friends
+  const router = createTestRouter().start((route) => { friends = route })
 
   router.push('/user/7/friends?a=1&b=2#abc')
-  const friends = router.current().route
-  router.push('/foo')
 
   // access by pattern
   eq(router.data('/user/:id')[0]({ id: 5 }), 'user=5')
-  // access by route match
-  eq(router.data(friends)[0]({ id: 5 }), 'friends=5')
+  // access by route pattern
+  eq(router.data(friends.pattern)[0]({ id: 5 }), 'friends=5')
 })
 
 test('.href(url, options)', () => {

@@ -2,67 +2,61 @@ var match = require('./match')
 var links = require('./links')
 var flatten = require('./flatten')
 var createHistory = require('./history')
-var qs = require('./qs')
+var defaultQs = require('./qs')
 
 module.exports = function createRouter (routes, options) {
+  var qs = options.qs || defaultQs
+
   options = options || {}
   options.mode = options.mode || 'history'
+  options.interceptLinks = options.interceptLinks !== false
   routes = flatten(routes)
 
-  var onChange
-  var history = createHistory({ mode: options.mode }, transition)
-  var unintercept = links.intercept(shouldIntercept, onClick)
+  var onTransition
+  var history
+  var unintercept = options.interceptLinks && links.intercept(shouldIntercept, onClick)
 
-  function shouldIntercept (a) {
-    return match(routes, a.getAttribute('href'))
+  function shouldIntercept (url) {
+    return match(routes, url, qs)
   }
 
-  function onClick (e, a) {
+  function onClick (e, url) {
     e.preventDefault()
-    history.push(a.getAttribute('href'))
+    history.push(url)
   }
 
   function transition (url) {
-    var curr = router.current()
-    if (!curr) return
-    onChange && onChange(curr.route, curr.data)
+    var route = match(routes, history.url(), qs)
+    route && onTransition(route, router.data(route.pattern))
   }
 
   var router = {
-    current: function () {
-      return match(routes, history.url())
-    },
-
-    data: function (route) {
-      if (typeof route !== 'string') {
-        route = route.pattern
-      }
+    data: function (pattern) {
       for (var i = 0; i < routes.length; i++) {
-        if (routes[i].pattern === route) {
+        if (routes[i].pattern === pattern) {
           return routes[i].data
         }
       }
     },
 
-    start: function (_onChange) {
-      onChange = _onChange
+    start: function (_onTransition) {
+      history = createHistory({ mode: options.mode }, transition)
+      onTransition = _onTransition
       transition()
       return router
     },
 
     stop: function () {
       unintercept && unintercept()
-      history.stop()
-      return router
+      history && history.stop()
     },
 
     push: function (url, options) {
-      history.push(url, options)
-      return router
+      history.push(router.href(url, options), options)
     },
 
     href: function (pattern, options) {
-      if (options.query) {
+      if (options && options.query) {
         return pattern + '?' + qs.stringify(options.query)
       }
       return pattern
