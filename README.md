@@ -11,7 +11,7 @@ Space router:
 - extracts url parameters and parses query strings
 - supports nested routes
 - should fit a very wide range of application architectures and frameworks
-- has no dependencies
+- has no dependencies and weights 1.8kb
 
 ## Usage
 
@@ -50,23 +50,61 @@ router.push('/channels/6', { replace: true })
 router.push('/video/5', { query: { t: '30s' } })
 // -> Matched [all, channels, video 5], adds a query string to the url /video/5?t=30s
 
-router.current()
-// -> returns { pattern, params, path, pathname, query, hash, data }
-
 router.data('/channels/:id')
-// -> [() => 'all', (params) => 'channel ' + params.id]
-router.data({ pattern: '/channels/:id' })
 // -> [() => 'all', (params) => 'channel ' + params.id]
 
 router.href('/video/5', { query: { t: '25s' } })
 // -> '/video/5?t=25s' in history mode or /#/video/5?t=25s in hash mode
 ```
 
-Example usage with `preact`.
+Here's an example that renders the app with `preact`.
 
 ```js
+const Preact = require('preact')
+const createRouter = require('space-router')
 
+const App = ({ router, children }) =>
+  <div className='App'>
+    <div className='Nav'>
+      <a href='/'>Home</a>
+      <a href='/channels'>Channels</a>
+      <a href='/channels/5'>Channel 5</a>
+    </div>
+    <div className='Content'>
+      {children}
+    </div>
+    <style>{`
+      body, html { padding: 20px; font-family: sans-serif; }
+      a { padding: 10px; }
+      .Nav { padding: 10px 0; border-bottom: 1px solid #eee; }
+      .Content { padding: 20px 10px; }
+    `}
+    </style>
+  </div>
+
+const Home = (props) => <div>Home</div>
+const Channels = (props) => <div>Channels</div>
+const Channel = (props) => <div>Channel {props.params.id}</div>
+const NotFound = (props) => <div>404</div>
+
+const router = createRouter([
+  ['', App, [
+    ['/', Home],
+    ['/channels', Channels],
+    ['/channels/:id', Channel],
+    ['*', NotFound]
+  ]]
+]).start(render)
+
+function render (route, components) {
+  let app = components.reduceRight((children, Component) =>
+    <Component params={route.params}>{children}</Component>
+  , null)
+  Preact.render(app, document.body, document.body.lastElementChild)
+}
 ```
+
+There are many other ways you could go about it depending on your application's architecture. E.g. one nice strategy is to update your central store via the `onTransition` callback and then use the `router.data()` helper to get the relevant components in your main render function.
 
 You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these examples out. Clone the repo and run `jetpack space-router/examples/preact`.
 
@@ -106,24 +144,12 @@ Generate a url. Useful if you want to append query string or if you're using mix
 
 * `options` object of shape { query }
 
-## Advanced features
+## Missing features
 
-Here are some tips on how to achieve certain more advanced use cases if they're relevant for you app.
+Space router **does not** do the following:
 
-### Rerendering directly in onChange
+- support custom root/base url when using pushState
+- support async transitions, often this is done at the view layer nowadays, but we could beforeTransition/next hooks if you have a use case
+- handle scroll positions, browsers are starting to do that natively (see this article on [scroll restoration](https://reacttraining.com/react-router/web/guides/scroll-restoration))
 
-### Rerendering via store and router.data()
-
-### Nesting components
-
-### Abstract routes
-
-### Using next() to add async behaviour or cancel routing
-
-### Using pushState with fallback to hash
-
-### Using custom query string parser
-
-### Using custom scroll behaviour
-
-### Using custom link interception
+[Post an issue](https://github.com/KidkArolis/space-router/issues/new) and I might add these features.
