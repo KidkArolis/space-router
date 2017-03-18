@@ -155,8 +155,8 @@ Exchange a route pattern to the array of data associated with this route. Useful
 Space router **does not** do the following yet:
 
 - support custom root/base url when using pushState
-- support async transitions, often this is done at the view layer nowadays, but we could beforeTransition/next hooks if you have a use case
-- support blocking transitions with a confirmation
+- support async transitions, often this is done at the view layer nowadays, but I could add beforeTransition hook or next callback if you have a use case
+- support canceling transitions via a confirmation
 - handle scroll positions, browsers are starting to do that natively (see this article on [scroll restoration](https://reacttraining.com/react-router/web/guides/scroll-restoration))
 
 [Post an issue](https://github.com/KidkArolis/space-router/issues/new) and I might add these features.
