@@ -43,10 +43,13 @@ function onTransition (route, data) {
 
 router.push('/channels')
 // -> Matched [all, channels]
+
 router.push('/channels/5')
 // -> Matched [all, channels, channel 5]
+
 router.push('/channels/6', { replace: true })
 // -> Matched [all, channels, channel 6], replaces current url, back button goes to /channels
+
 router.push('/video/5', { query: { t: '30s' } })
 // -> Matched [all, channels, video 5], adds a query string to the url /video/5?t=30s
 
@@ -112,8 +115,11 @@ You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these exampl
 
 ### `createRouter(routes, options)`
 
-* `routes` an array of arrays of route definitions, e.g. ['/:pattern', Component] or ['/:pattern', Component, [...children...]]
-* `options` object of shape { mode, interceptLinks, qs }
+* `routes` an array of arrays of route definitions, e.g. e.g. `['/:pattern', Component, [...children]]`
+* `options` object of shape `{ mode, interceptLinks, qs }`
+  * `mode` - one of `history`, `hash`, `memory`, default is `history`
+  * `interceptLinks` - whether to handle `<a>` clicks, default is `true`
+  * `qs` - a custom query string parser, object of shape `{ parse, stringify }`
 
 ### `start(onTransition)`
 
@@ -134,15 +140,15 @@ Navigate to a url. Updates browser URL and calls `onTransition`.
 - `url` a relative url string
 - `options` an object of shape `{ replace, query }`
 
-### `data(pattern)`
-
-Exchange a route pattern to the array of data associated with this route. Useful when implementing a stateless pattern, where current route state is stored in a central store, and rendering logic needs to look up the component(s) associated with the given route.
-
 ### `href(url, options)`
 
 Generate a url. Useful if you want to append query string or if you're using mixed history/hash mode and you don't know which one is in play. Href will prepend urls with '#' when in hash mode.
 
 * `options` object of shape { query }
+
+### `data(pattern)`
+
+Exchange a route pattern to the array of data associated with this route. Useful when implementing a stateless pattern, where current route state is stored in a central store, and rendering logic needs to look up the component(s) associated with the given route.
 
 ## Missing features
 
