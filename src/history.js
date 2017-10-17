@@ -40,7 +40,7 @@ module.exports = function createHistory (options, onChange) {
   }
 
   function url () {
-    if (mode === 'history') return location.pathname + location.search
+    if (mode === 'history') return location.pathname + location.search + '#' + getHash()
     if (mode === 'hash') return getHash()
     if (mode === 'memory') return memory[memory.length - 1]
   }
