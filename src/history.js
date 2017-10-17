@@ -40,8 +40,13 @@ module.exports = function createHistory (options, onChange) {
   }
 
   function url () {
-    if (mode === 'history') return location.pathname + location.search
-    if (mode === 'hash') return getHash()
+    var hash = getHash()
+    if (mode === 'history') {
+      var url = location.pathname + location.search
+      if (hash !== '') url += '#' + hash
+      return url
+    }
+    if (mode === 'hash') return hash === '' ? '/' : hash
     if (mode === 'memory') return memory[memory.length - 1]
   }
 
@@ -49,6 +54,6 @@ module.exports = function createHistory (options, onChange) {
   // in Firefox where location.hash will always be decoded.
   function getHash () {
     var match = location.href.match(/#(.*)$/)
-    return match ? match[1].replace('#', '') : '/'
+    return match ? match[1].replace('#', '') : ''
   }
 }
