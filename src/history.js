@@ -40,14 +40,14 @@ module.exports = function createHistory (options, onChange) {
   }
 
   function url () {
+    if (mode === 'memory') return memory[memory.length - 1]
     var hash = getHash()
+    if (mode === 'hash') return hash === '' ? '/' : hash
     if (mode === 'history') {
       var url = location.pathname + location.search
       if (hash !== '') url += '#' + hash
       return url
     }
-    if (mode === 'hash') return hash === '' ? '/' : hash
-    if (mode === 'memory') return memory[memory.length - 1]
   }
 
   // Gets the true hash value. Cannot use location.hash directly due to bug
