@@ -25,7 +25,7 @@ module.exports = function createRouter (routes, options) {
     history.push(url)
   }
 
-  function transition (url) {
+  function transition () {
     var route = match(routes, history.url(), qs)
     route && onTransition(route, router.data(route.pattern))
   }
