@@ -3,6 +3,7 @@ var links = require('./links')
 var flatten = require('./flatten')
 var createHistory = require('./history')
 var defaultQs = require('./qs')
+var noop = require('./noop')
 
 module.exports = function createRouter (routes, options) {
   options = options || {}
@@ -11,6 +12,7 @@ module.exports = function createRouter (routes, options) {
   options.interceptLinks = options.interceptLinks !== false
   routes = flatten(routes)
 
+  var beforeTransition = options.beforeTransition || noop
   var onTransition
   var history
   var qs = options.qs || defaultQs
@@ -27,7 +29,20 @@ module.exports = function createRouter (routes, options) {
 
   function transition () {
     var route = match(routes, history.url(), qs)
-    route && onTransition(route, router.data(route.pattern))
+    if (!route) return
+
+    var data = router.data(route.pattern)
+
+    var res = beforeTransition(route, data)
+    if (res && res.then) {
+      return res.then(doTransition)
+    }
+
+    doTransition()
+
+    function doTransition () {
+      onTransition(route, router.data(route.pattern))
+    }
   }
 
   var router = {

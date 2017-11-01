@@ -120,6 +120,7 @@ You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these exampl
   * `mode` - one of `history`, `hash`, `memory`, default is `history`
   * `interceptLinks` - whether to handle `<a>` clicks, default is `true`
   * `qs` - a custom query string parser, object of shape `{ parse, stringify }`
+  * `beforeTransition` - called with `(route, data)`, this will be run before a transition happens, if a promise is returned the router will wait for it to be resolved before transitioning
 
 ### `start(onTransition)`
 
@@ -155,7 +156,6 @@ Exchange a route pattern to the array of data associated with this route. Useful
 Space router **does not** do the following yet:
 
 - support custom root/base url when using pushState
-- support async transitions, often this is done at the view layer nowadays, but I could add beforeTransition hook or next callback if you have a use case
 - support canceling transitions via a confirmation
 - handle scroll positions, browsers are starting to do that natively (see this article on [scroll restoration](https://reacttraining.com/react-router/web/guides/scroll-restoration))
 
