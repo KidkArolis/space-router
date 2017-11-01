@@ -48,12 +48,42 @@ test('.href(url, options)', () => {
   eq('/user/7/friends?a=1&b=2', router.href('/user/7/friends', { query: { a: 1, b: 2 } }))
 })
 
-function createTestRouter () {
+test('options.beforeTransition', () => {
+  return new Promise((resolve, reject) => {
+    let beforeTransitionTime
+    const router = createTestRouter({
+      beforeTransition: async () => {
+        await timeout(1000)
+        beforeTransitionTime = new Date()
+      }
+    })
+
+    router.start(() => {
+      try {
+        eq(new Date() >= beforeTransitionTime, true)
+      } catch (e) {
+        reject(e)
+      }
+      resolve()
+    })
+
+    router.push('/foo/bar')
+  })
+})
+
+function timeout (time) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => resolve(), timeout)
+  })
+}
+
+function createTestRouter (opts) {
+  opts = Object.assign({ mode: 'memory' }, opts)
   return createRouter([
     ['/foo', () => 'foo'],
     ['/bar', () => 'bar'],
     ['/user/:id', (params) => 'user=' + params.id],
     ['/user/:id/friends', (params) => 'friends=' + params.id],
     ['*', () => 'catchall']
-  ], { mode: 'memory' })
+  ], opts)
 }
