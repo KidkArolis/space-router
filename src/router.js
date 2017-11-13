@@ -17,11 +17,17 @@ module.exports = function createRouter (routes, options) {
   var unintercept = options.interceptLinks && links.intercept(shouldIntercept, onClick)
 
   function shouldIntercept (url) {
+    if (/^#/.test(url)) {
+      url = history.url().replace(/#.*/, url)
+    }
     return match(routes, url, qs)
   }
 
   function onClick (e, url) {
     e.preventDefault()
+    if (/^#/.test(url)) {
+      url = history.url().replace(/#.*/, url)
+    }
     history.push(url)
   }
 
