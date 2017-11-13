@@ -118,7 +118,7 @@ You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these exampl
 * `routes` an array of arrays of route definitions, e.g. e.g. `['/:pattern', Component, [...children]]`
 * `options` object of shape `{ mode, interceptLinks, qs }`
   * `mode` - one of `history`, `hash`, `memory`, default is `history`
-  * `interceptLinks` - whether to handle `<a>` clicks, default is `true`
+  * `interceptLinks` - whether to handle `<a>` clicks, default is `true`. Optionally pass in a function of the format `shouldIntercept(url)` that determines if a link should be intercepted
   * `qs` - a custom query string parser, object of shape `{ parse, stringify }`
 
 ### `start(onTransition)`

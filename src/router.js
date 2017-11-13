@@ -8,16 +8,21 @@ module.exports = function createRouter (routes, options) {
   options = options || {}
 
   options.mode = options.mode || 'history'
-  options.interceptLinks = options.interceptLinks !== false
   routes = flatten(routes)
 
   var onTransition
   var history
   var qs = options.qs || defaultQs
-  var unintercept = options.interceptLinks && links.intercept(shouldIntercept, onClick)
+  var unintercept
 
-  function shouldIntercept (url) {
-    return match(routes, url, qs)
+  if (options.interceptLinks !== false) {
+    unintercept = links.intercept(function shouldIntercept (url) {
+      var intercept = true
+      if (typeof options.interceptLinks === 'function') {
+        intercept = options.interceptLinks(url)
+      }
+      return intercept && match(routes, url, qs)
+    }, onClick)
   }
 
   function onClick (e, url) {
