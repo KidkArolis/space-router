@@ -19,7 +19,7 @@
   ],
   "author": "Karolis Narkevicius",
   "scripts": {
-    "test": "standard && nyc mocha"
+    "test": "standard && standard5 && nyc mocha"
   },
   "dependencies": {},
   "devDependencies": {

@@ -56,8 +56,17 @@ module.exports = function createRouter (routes, options) {
     },
 
     href: function (pattern, options) {
-      if (options && options.query) {
-        return pattern + '?' + qs.stringify(options.query)
+      options = options || {}
+      if (options.params) {
+        Object.keys(options.params).forEach(function (param) {
+          pattern = pattern.replace(':' + param, options.params[param])
+        })
+      }
+      if (options.query) {
+        pattern = pattern + '?' + qs.stringify(options.query)
+      }
+      if (options.hash) {
+        pattern = pattern + options.hash
       }
       return pattern
     }
