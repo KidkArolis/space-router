@@ -16,6 +16,8 @@ module.exports = function createRouter (routes, options) {
   var qs = options.qs || defaultQs
   var unintercept = options.interceptLinks && links.intercept(shouldIntercept, onClick)
 
+  var currentRoute
+
   function shouldIntercept (url) {
     return match(routes, url, qs)
   }
@@ -27,6 +29,7 @@ module.exports = function createRouter (routes, options) {
 
   function transition () {
     var route = match(routes, history.url(), qs)
+    currentRoute = route
     route && onTransition(route, router.data(route.pattern))
   }
 
@@ -53,6 +56,17 @@ module.exports = function createRouter (routes, options) {
 
     push: function (url, options) {
       history.push(router.href(url, options), options)
+    },
+
+    set: function (options) {
+      options = options || {}
+      var current = currentRoute
+      var params = Object.assign({}, current.params, options.params)
+      var query = Object.assign({}, current.query, options.query)
+      var hash = options.hash || current.hash || ''
+
+      var nextHref = router.href(current.pattern, { params, query, hash })
+      history.push(nextHref, options)
     },
 
     href: function (pattern, options) {
