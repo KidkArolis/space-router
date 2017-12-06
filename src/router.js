@@ -62,7 +62,7 @@ module.exports = function createRouter (routes, options) {
           pattern = pattern.replace(':' + param, options.params[param])
         })
       }
-      if (options.query) {
+      if (options.query && Object.keys(options.query).length) {
         pattern = pattern + '?' + qs.stringify(options.query)
       }
       if (options.hash) {
