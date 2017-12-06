@@ -46,6 +46,8 @@ test('.href(url, options)', () => {
   const router = createTestRouter().start()
 
   eq('/user/7/friends?a=1&b=2', router.href('/user/7/friends', { query: { a: 1, b: 2 } }))
+  eq('/user/7/friends?a=1&b=2', router.href('/user/:id/friends', { params: { id: 7 }, query: { a: 1, b: 2 } }))
+  eq('/user/7/friends?a=1&b=2#bla', router.href('/user/:id/friends', { params: { id: 7 }, query: { a: 1, b: 2 }, hash: '#bla' }))
 })
 
 function createTestRouter () {

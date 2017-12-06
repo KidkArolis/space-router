@@ -21,9 +21,11 @@ function a (el) {
   }
 }
 
-function shouldIntercept (e, el, matches) {
+function shouldIntercept (e, href, matches) {
   if (e.defaultPrevented) return false
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return false
-  if (matches(el)) return true
+  if ((href || '')[0] !== '/') return false
+  if (window.location.pathname + window.location.search === href.split('#')[0]) return false
+  if (matches(href)) return true
   return false
 }
