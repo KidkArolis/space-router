@@ -14,6 +14,8 @@ const App = ({ router, children }) =>
       <a href='/'>Home</a>
       <a href='/channels'>Channels</a>
       <a href='/channels/5'>Channel 5</a>
+      <a href='/channels/6' target='_blank'>Target _blank</a>
+      <a href='/channels/7' target='_self'>Target _self</a>
     </div>
     <div className='Content'>
       {children}
