@@ -24,6 +24,7 @@ function a (el) {
 function shouldIntercept (e, href, matches) {
   if (e.defaultPrevented) return false
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return false
+  if (e.target.hasAttribute('target') && e.target.getAttribute('target') !== '_self') return false
   if ((href || '')[0] !== '/') return false
   if (window.location.pathname + window.location.search === href.split('#')[0]) return false
   if (matches(href)) return true
