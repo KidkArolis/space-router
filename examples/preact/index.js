@@ -46,6 +46,6 @@ const router = createRouter([
 function render (route, components) {
   let app = components.reduceRight((children, Component) =>
     <Component params={route.params}>{children}</Component>
-  , null)
+    , null)
   Preact.render(app, document.body, document.body.lastElementChild)
 }
