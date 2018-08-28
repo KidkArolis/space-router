@@ -63,7 +63,10 @@ module.exports = function createRouter (routes, options) {
         })
       }
       if (options.query && Object.keys(options.query).length) {
-        pattern = pattern + '?' + qs.stringify(options.query)
+        var query = qs.stringify(options.query)
+        if (query) {
+          pattern = pattern + '?' + query
+        }
       }
       if (options.hash) {
         pattern = pattern + options.hash

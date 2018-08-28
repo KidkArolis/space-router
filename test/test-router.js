@@ -50,6 +50,8 @@ test('.href(url, options)', () => {
   eq('/user/7/friends?a=1&b=2#bla', router.href('/user/:id/friends', { params: { id: 7 }, query: { a: 1, b: 2 }, hash: '#bla' }))
   eq('/user/8/friends#foo', router.href('/user/:id/friends', { params: { id: 8 }, hash: '#foo' }))
   eq('/user/8/friends#foo', router.href('/user/:id/friends', { params: { id: 8 }, query: {}, hash: '#foo' }))
+  eq('/user/8/friends?q=null#foo', router.href('/user/:id/friends', { params: { id: 8 }, query: { q: null }, hash: '#foo' }))
+  eq('/user/8/friends#foo', router.href('/user/:id/friends', { params: { id: 8 }, query: { q: undefined }, hash: '#foo' }))
 })
 
 function createTestRouter () {
