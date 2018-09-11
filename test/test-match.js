@@ -44,6 +44,7 @@ test('match required splat param segments', () => {
 
 test('match catch all', () => {
   eq(match('*', '/some/thing?abc=1', qs), {
+    href: '/some/thing?abc=1',
     path: '/some/thing?abc=1',
     pathname: '/some/thing',
     pattern: '*',
@@ -60,6 +61,7 @@ test('match catch all', () => {
 
 test('match query params', () => {
   eq(match('/bar/:foo', '/bar/baz?q=s#abc', qs), {
+    href: '/bar/baz?q=s#abc',
     path: '/bar/baz?q=s#abc',
     pathname: '/bar/baz',
     pattern: '/bar/:foo',

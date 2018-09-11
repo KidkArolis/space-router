@@ -129,7 +129,7 @@ You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these exampl
 Start the routing, will immediately call `onTransition` based on the current URL.
 
 * `onTransition` is called with `(route, data)`
-  - `route` is an object of shape `{ pattern, path, pathname, params, query, hash }`
+  - `route` is an object of shape `{ pattern, href, pathname, params, query, hash }`
   - `data` is an array of datas associated with this route
 
 ### `stop()`
