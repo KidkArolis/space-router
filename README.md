@@ -2,7 +2,7 @@
 
 Minimal, yet awesome, batteries included universal router.
 
-Space router packs all the features you need to always keep your app in sync with the url. It's different from most other routers in that there is only a **single callback**. Use this callback to rerender your app or update your store on each url change.
+Space router packs all the features you need to always keep your app in sync with the url. It's different from most other routers in that there is only a single callback. Use this callback to rerender your app or update your store on each url change.
 
 Space router:
 
@@ -10,60 +10,16 @@ Space router:
 - handles all link clicks in your app
 - extracts url parameters and parses query strings
 - supports nested routes
-- should fit a very wide range of application architectures and frameworks
-- has no dependencies and weights 1.8kb
+- should fit a wide range of application architectures and frameworks
+- has no dependencies and weights 2kb
 
 ## Usage
 
-    yarn add space-router
+    npm i space-router
 
 ## Example
 
 Example demonstrating most of the API.
-
-```js
-const createRouter = require('space-router')
-
-const router = createRouter(
-  ['', () => 'app', [
-    ['/', () => 'index'],
-    ['/channels', () => 'channels', [
-      ['/channels/:id', (params) => 'channel ' + params.id]
-    ]],
-    ['/video/:id', (params) => 'video ' + params.id],
-    ['*', () => 'not found']
-  ]]
-).start(onTransition)
-
-function onTransition (route, data) {
-  let { params } = route
-  // just logging instead of rendering to keep the example simple
-  console.log('Matched', '[' + data.map(fn => fn(params)).join(', ') + ']')
-}
-
-router.push('/channels')
-// -> Matched [all, channels]
-
-router.push('/channels/5')
-// -> Matched [all, channels, channel 5]
-
-router.push('/channels/6', { replace: true })
-// -> Matched [all, channels, channel 6], replaces current url, back button goes to /channels
-
-router.push('/video/5', { query: { t: '30s' } })
-// -> Matched [all, channels, video 5], adds a query string to the url /video/5?t=30s
-
-router.data('/channels/:id')
-// -> [() => 'all', (params) => 'channel ' + params.id]
-
-router.href('/video/5', { query: { t: '25s' } })
-// -> '/video/5?t=25s' in history mode or /#/video/5?t=25s in hash mode
-
-router.href('/video/:id', { params: { id: 5 }, query: { t: '25s' }, hash: '#foo' })
-// -> '/video/5?t=25s#foo' in history mode
-```
-
-Here's an example that renders the app with `preact`.
 
 ```js
 const Preact = require('preact')
@@ -110,6 +66,34 @@ function render (route, components) {
 }
 ```
 
+And here's more of the router API:
+
+```
+// navigate to the urls
+router.push('/channels')
+router.push('/channels/5')
+router.push('/video/5', { query: { t: '30s' } })
+
+// replace instead of pushing
+router.push('/channels/6', { replace: true })
+router.replace('/channels/6')
+
+// update parts of the url
+router.set({ params: { id: 1 } })
+router.set({ params: { id: 1 }, replace: true })
+router.set({ query: null })
+
+// get data (components, objects, etc.) associated with a route patterm
+router.data('/channels/:id')
+
+// generate links
+router.href('/video/5', { query: { t: '25s' } })
+router.href('/video/:id', { params: { id: 5 }, query: { t: '25s' }, hash: '#foo' })
+
+// match a url and retrieve details and data { route, data }, useful for SSR
+router.match('/channels/5?t=25s')
+```
+
 There are many other ways you could go about it depending on your application's architecture. E.g. one nice strategy is to update your central store via the `onTransition` callback and then use the `router.data()` helper to get the relevant components in your main render function.
 
 You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these examples out. Clone the repo and run `jetpack space-router/examples/preact`.
@@ -140,8 +124,25 @@ Stop the routing, remove DOM `click` and `popstate/hashchange` listeners.
 
 Navigate to a url. Updates browser URL and calls `onTransition`.
 
-- `url` a relative url string
-- `options` an object of shape `{ replace, query }`
+- `url` a relative url string or a route pattern
+- `options` an object of shape `{ replace, params, query, hash }`
+
+### `replace(url, options)`
+
+Navigate to a url. Replaces the current browser URL without adding a new history entry and calls `onTransition`.
+
+- `url` a relative url string or a route pattern
+- `options` an object of shape `{ params, query, hash }`
+
+### `set(options)`
+
+Update any part of the URL without losing existing parameters. Replaces the current browser and calls `onTransition`.
+
+- `options` an object of shape `{ replace, pattern, params, query, hash }`
+
+### `match(url)`
+
+Match the url against the routes and return `{ route, data }`. Useful in SSR.
 
 ### `href(url, options)`
 
@@ -153,12 +154,3 @@ Generate a url. Useful if you want to append query string or if you're using mix
 ### `data(pattern)`
 
 Exchange a route pattern to the array of data associated with this route. Useful when implementing a stateless pattern, where current route state is stored in a central store, and rendering logic needs to look up the component(s) associated with the given route.
-
-## Missing features
-
-Space router **does not** do the following yet:
-
-- support custom root/base url when using pushState
-- support canceling transitions via a confirmation
-
-[Post an issue](https://github.com/KidkArolis/space-router/issues/new) and I might add these features.
