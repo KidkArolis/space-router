@@ -76,7 +76,7 @@ module.exports = function createRouter (routes, options) {
     },
 
     match: function (url) {
-      var route = match(history.url())
+      var route = match(url)
       return { route: route, data: router.data(route.pattern) }
     },
 

@@ -65,6 +65,25 @@ test('.href(url, options)', () => {
   eq('/user/8/friends#foo', router.href('/user/:id/friends', { params: { id: 8 }, query: { q: undefined }, hash: '#foo' }))
 })
 
+test('.match(url)', () => {
+  const router = createTestRouter()
+
+  const route = {
+    hash: '',
+    href: '/user/7/settings?a=1',
+    params: {
+      id: '7'
+    },
+    pathname: '/user/7/settings',
+    pattern: '/user/:id/settings',
+    query: {
+      a: '1'
+    }
+  }
+  const data = ['settings-data']
+  eq({ route, data }, router.match('/user/7/settings?a=1'))
+})
+
 function createTestRouter () {
   return createRouter([
     ['/foo', () => 'foo'],
@@ -74,6 +93,7 @@ function createTestRouter () {
       return 'user=' + params.id + q
     }],
     ['/user/:id/friends', (params) => 'friends=' + params.id],
+    ['/user/:id/settings', 'settings-data'],
     ['*', () => 'catchall']
   ], { mode: 'memory' })
 }
