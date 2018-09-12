@@ -27,7 +27,7 @@ router.push('/video/5', { query: { t: '30s' } })
 // -> Matched [all, channels, video 5], adds a query string to the url /video/5?t=30s
 
 router.current()
-// -> returns { pattern, params, path, pathname, query, hash, data }
+// -> returns { pattern, params, href, pathname, query, hash, data }
 
 router.data('/channels/:id')
 // -> [() => 'all', (params) => 'channel ' + params.id]

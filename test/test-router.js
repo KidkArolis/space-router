@@ -1,14 +1,15 @@
 const eq = require('assert').deepEqual
 const createRouter = require('..')
+const qs = require('../src/qs')
 
 suite('space-router')
 
-test('createRouter() / .start(onTransition) / .push(url) / .stop()', () => {
+test('createRouter() / .start(onTransition) / .push(url) / .set() / .stop()', () => {
   const calls = []
 
   const router = createTestRouter()
   router.start((route, data) => {
-    calls.push(data[0](route.params))
+    calls.push(data[0](route.params, route.query))
   })
 
   router.push('/foo')
@@ -17,6 +18,11 @@ test('createRouter() / .start(onTransition) / .push(url) / .stop()', () => {
   router.push('/user/7')
   router.push('/user/8/posts')
   router.push('/bar')
+  router.set({ pattern: '/user/:id', params: { id: 1 } })
+  router.set({ params: { id: 2 } })
+  router.set({ query: { a: 1, b: 2 } })
+  router.set({ query: { b: 4, c: 5 } })
+  router.set({ query: null })
 
   eq([
     'foo',
@@ -24,7 +30,12 @@ test('createRouter() / .start(onTransition) / .push(url) / .stop()', () => {
     'friends=7',
     'user=7',
     'catchall',
-    'bar'
+    'bar',
+    'user=1',
+    'user=2',
+    'user=2?a=1&b=2',
+    'user=2?a=1&b=4&c=5',
+    'user=2'
   ], calls)
 
   router.stop()
@@ -54,12 +65,35 @@ test('.href(url, options)', () => {
   eq('/user/8/friends#foo', router.href('/user/:id/friends', { params: { id: 8 }, query: { q: undefined }, hash: '#foo' }))
 })
 
+test('.match(url)', () => {
+  const router = createTestRouter()
+
+  const route = {
+    hash: '',
+    href: '/user/7/settings?a=1',
+    params: {
+      id: '7'
+    },
+    pathname: '/user/7/settings',
+    pattern: '/user/:id/settings',
+    query: {
+      a: '1'
+    }
+  }
+  const data = ['settings-data']
+  eq({ route, data }, router.match('/user/7/settings?a=1'))
+})
+
 function createTestRouter () {
   return createRouter([
     ['/foo', () => 'foo'],
     ['/bar', () => 'bar'],
-    ['/user/:id', (params) => 'user=' + params.id],
+    ['/user/:id', (params, query) => {
+      const q = (query && Object.keys(query).length ? `?${qs.stringify(query)}` : '')
+      return 'user=' + params.id + q
+    }],
     ['/user/:id/friends', (params) => 'friends=' + params.id],
+    ['/user/:id/settings', 'settings-data'],
     ['*', () => 'catchall']
   ], { mode: 'memory' })
 }

@@ -59,7 +59,6 @@ function matchOne (pattern, url, qs) {
 
   return {
     pattern: originalPattern,
-    path: originalUrl,
     href: originalUrl,
     pathname: originalUrl.replace(search, ''),
     params: params,

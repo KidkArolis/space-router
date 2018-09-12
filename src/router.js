@@ -1,4 +1,4 @@
-var match = require('./match')
+var matcher = require('./match')
 var links = require('./links')
 var flatten = require('./flatten')
 var createHistory = require('./history')
@@ -17,7 +17,7 @@ module.exports = function createRouter (routes, options) {
   var unintercept = options.interceptLinks && links.intercept(shouldIntercept, onClick)
 
   function shouldIntercept (url) {
-    return match(routes, url, qs)
+    return match(url)
   }
 
   function onClick (e, url) {
@@ -26,8 +26,12 @@ module.exports = function createRouter (routes, options) {
   }
 
   function transition () {
-    var route = match(routes, history.url(), qs)
+    var route = match(history.url())
     route && onTransition(route, router.data(route.pattern))
+  }
+
+  function match (url) {
+    return matcher(routes, url, qs)
   }
 
   var router = {
@@ -53,6 +57,27 @@ module.exports = function createRouter (routes, options) {
 
     push: function (url, options) {
       history.push(router.href(url, options), options)
+    },
+
+    replace: function (url, options) {
+      router.push(url, Object.assign({}, options, { replace: true }))
+    },
+
+    set: function (options) {
+      options = options || {}
+      var current = match(history.url())
+      var pattern = options.pattern || current.pattern
+      var params = Object.assign({}, current.params, options.params)
+      var query = options.query === null ? null : Object.assign({}, current.query, options.query)
+      var hash = options.hash === null ? null : (options.hash || current.hash || '')
+
+      var nextHref = router.href(pattern, { params: params, query: query, hash: hash })
+      history.push(nextHref, options)
+    },
+
+    match: function (url) {
+      var route = match(url)
+      return { route: route, data: router.data(route.pattern) }
     },
 
     href: function (pattern, options) {
