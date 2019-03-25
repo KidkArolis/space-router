@@ -1,7 +1,7 @@
 module.exports = match
 module.exports.matchOne = matchOne
 
-function match (routes, url, qs) {
+function match(routes, url, qs) {
   if (!url) return
   for (var i = 0; i < routes.length; i++) {
     var m = matchOne(routes[i].pattern, url, qs)
@@ -9,7 +9,7 @@ function match (routes, url, qs) {
   }
 }
 
-function matchOne (pattern, url, qs) {
+function matchOne(pattern, url, qs) {
   if (!pattern) return false
 
   var search = /(?:\?([^#]*))?(#.*)?$/
@@ -46,7 +46,10 @@ function matchOne (pattern, url, qs) {
         }
         params[param] = decodeURIComponent(val)
         if (plus || star) {
-          params[param] = url.slice(i).map(decodeURIComponent).join('/')
+          params[param] = url
+            .slice(i)
+            .map(decodeURIComponent)
+            .join('/')
           break
         }
       } else if (pattern[i] !== url[i]) {
@@ -67,10 +70,10 @@ function matchOne (pattern, url, qs) {
   }
 }
 
-function segmentize (url) {
+function segmentize(url) {
   return strip(url).split('/')
 }
 
-function strip (url) {
+function strip(url) {
   return url.replace(/(^\/+|\/+$)/g, '')
 }

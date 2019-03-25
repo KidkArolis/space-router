@@ -25,17 +25,16 @@ Example demonstrating most of the API.
 const Preact = require('preact')
 const createRouter = require('space-router')
 
-const App = ({ router, children }) =>
+const App = ({ router, children }) => (
   <div className='App'>
     <div className='Nav'>
       <a href='/'>Home</a>
       <a href='/channels'>Channels</a>
       <a href='/channels/5'>Channel 5</a>
     </div>
-    <div className='Content'>
-      {children}
-    </div>
-    <style>{`
+    <div className='Content'>{children}</div>
+    <style>
+      {`
       body, html { padding: 20px; font-family: sans-serif; }
       a { padding: 10px; }
       .Nav { padding: 10px 0; border-bottom: 1px solid #eee; }
@@ -43,25 +42,22 @@ const App = ({ router, children }) =>
     `}
     </style>
   </div>
+)
 
-const Home = (props) => <div>Home</div>
-const Channels = (props) => <div>Channels</div>
-const Channel = (props) => <div>Channel {props.params.id}</div>
-const NotFound = (props) => <div>404</div>
+const Home = props => <div>Home</div>
+const Channels = props => <div>Channels</div>
+const Channel = props => <div>Channel {props.params.id}</div>
+const NotFound = props => <div>404</div>
 
 const router = createRouter([
-  ['', App, [
-    ['/', Home],
-    ['/channels', Channels],
-    ['/channels/:id', Channel],
-    ['*', NotFound]
-  ]]
+  ['', App, [['/', Home], ['/channels', Channels], ['/channels/:id', Channel], ['*', NotFound]]]
 ]).start(render)
 
-function render (route, components) {
-  let app = components.reduceRight((children, Component) =>
-    <Component params={route.params}>{children}</Component>
-  , null)
+function render(route, components) {
+  let app = components.reduceRight(
+    (children, Component) => <Component params={route.params}>{children}</Component>,
+    null
+  )
   Preact.render(app, document.body, document.body.lastElementChild)
 }
 ```
@@ -102,17 +98,17 @@ You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these exampl
 
 ### `createRouter(routes, options)`
 
-* `routes` an array of arrays of route definitions, e.g. e.g. `['/:pattern', Component, [...children]]`
-* `options` object of shape `{ mode, interceptLinks, qs }`
-  * `mode` - one of `history`, `hash`, `memory`, default is `history`
-  * `interceptLinks` - whether to handle `<a>` clicks, default is `true`
-  * `qs` - a custom query string parser, object of shape `{ parse, stringify }`
+- `routes` an array of arrays of route definitions, e.g. e.g. `['/:pattern', Component, [...children]]`
+- `options` object of shape `{ mode, interceptLinks, qs }`
+  - `mode` - one of `history`, `hash`, `memory`, default is `history`
+  - `interceptLinks` - whether to handle `<a>` clicks, default is `true`
+  - `qs` - a custom query string parser, object of shape `{ parse, stringify }`
 
 ### `start(onTransition)`
 
 Start the routing, will immediately call `onTransition` based on the current URL.
 
-* `onTransition` is called with `(route, data)`
+- `onTransition` is called with `(route, data)`
   - `route` is an object of shape `{ pattern, href, pathname, params, query, hash }`
   - `data` is an array of datas associated with this route
 
@@ -148,8 +144,8 @@ Match the url against the routes and return `{ route, data }`. Useful in SSR.
 
 Generate a url. Useful if you want to append query string or if you're using mixed history/hash mode and you don't know which one is in play. Href will prepend urls with '#' when in hash mode.
 
-* `url` - can be a full url or a pattern
-* `options` object of shape { params, query, hash }
+- `url` - can be a full url or a pattern
+- `options` object of shape { params, query, hash }
 
 ### `data(pattern)`
 

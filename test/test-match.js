@@ -1,4 +1,4 @@
-const eq = require('assert').deepEqual
+const eq = require('assert').deepStrictEqual
 const qs = require('../src/qs')
 const match = require('../src/match').matchOne
 

@@ -1,6 +1,6 @@
 var on = require('./on')
 
-module.exports = function createHistory (options, onChange) {
+module.exports = function createHistory(options, onChange) {
   var mode = options.mode
 
   var memory = []
@@ -15,16 +15,16 @@ module.exports = function createHistory (options, onChange) {
     off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onPop)
   }
 
-  function onPop () {
+  function onPop() {
     onChange(url())
   }
 
   return {
     url: url,
-    stop: function () {
+    stop: function() {
       off && off()
     },
-    push: function push (url, options) {
+    push: function push(url, options) {
       url = url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/'
       options = options || {}
       if (mode === 'history') {
@@ -39,7 +39,7 @@ module.exports = function createHistory (options, onChange) {
     }
   }
 
-  function url () {
+  function url() {
     if (mode === 'memory') return memory[memory.length - 1]
     var hash = getHash()
     if (mode === 'hash') return hash === '' ? '/' : hash
@@ -52,7 +52,7 @@ module.exports = function createHistory (options, onChange) {
 
   // Gets the true hash value. Cannot use location.hash directly due to bug
   // in Firefox where location.hash will always be decoded.
-  function getHash () {
+  function getHash() {
     var match = location.href.match(/#(.*)$/)
     return match ? match[1].replace('#', '') : ''
   }
