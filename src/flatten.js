@@ -1,19 +1,20 @@
 module.exports = function flatten(routeMap) {
-  var routes = []
-  var parentData = []
+  const routes = []
+  const parentData = []
+  addLevel(routeMap)
+  return routes
 
   function addLevel(level) {
-    level.forEach(function(route) {
-      routes.push({ pattern: route[0], data: parentData.concat([route[1]]) })
-      if (route[2]) {
-        parentData.push(route[1])
-        addLevel(route[2])
+    level.forEach(route => {
+      const { path, routes: children, ...routeData } = route
+      if (path) {
+        routes.push({ pattern: path, data: parentData.concat([routeData]) })
+      }
+      if (children) {
+        parentData.push(routeData)
+        addLevel(children)
         parentData.pop()
       }
     })
   }
-
-  addLevel(routeMap)
-
-  return routes
 }

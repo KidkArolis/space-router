@@ -35,7 +35,9 @@
       "suite",
       "test",
       "location",
-      "history"
+      "history",
+      "requestAnimationFrame",
+      "cancelAnimationFrame"
     ]
   },
   "standard5": {

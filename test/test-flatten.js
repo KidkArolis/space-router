@@ -4,21 +4,64 @@ const flatten = require('../src/flatten')
 suite('flatten')
 
 test('converts array of routes to array of internap route descriptors', () => {
-  eq(flatten([['/foo', 'foo'], ['/bar', 'bar']]), [
-    { pattern: '/foo', data: ['foo'] },
-    { pattern: '/bar', data: ['bar'] }
-  ])
+  eq(
+    flatten([
+      {
+        path: '/foo',
+        name: 'foo'
+      },
+      {
+        path: '/bar',
+        name: 'bar'
+      }
+    ]),
+    [
+      {
+        pattern: '/foo',
+        data: [{ name: 'foo' }]
+      },
+      {
+        pattern: '/bar',
+        data: [{ name: 'bar' }]
+      }
+    ]
+  )
 })
 
 test('handles nested routes', () => {
   eq(
-    flatten([['', 'root', [['/foo', 'foo', [['/foo/bar', 'bar']]]]], ['/second', 'second-root', [['/baz/*', 'baz']]]]),
+    flatten([
+      {
+        name: 'superoot',
+        routes: [
+          {
+            name: 'root',
+            routes: [
+              {
+                path: '/foo',
+                name: 'foo',
+                routes: [
+                  {
+                    path: '/foo/bar',
+                    name: 'bar'
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            path: '/second',
+            name: 'second-root',
+            routes: [{ path: '/baz/*', name: 'baz' }]
+          }
+        ]
+      }
+    ]),
     [
-      { pattern: '', data: ['root'] },
-      { pattern: '/foo', data: ['root', 'foo'] },
-      { pattern: '/foo/bar', data: ['root', 'foo', 'bar'] },
-      { pattern: '/second', data: ['second-root'] },
-      { pattern: '/baz/*', data: ['second-root', 'baz'] }
+      { pattern: '/foo', data: [{ name: 'superoot' }, { name: 'root' }, { name: 'foo' }] },
+      { pattern: '/foo/bar', data: [{ name: 'superoot' }, { name: 'root' }, { name: 'foo' }, { name: 'bar' }] },
+      { pattern: '/second', data: [{ name: 'superoot' }, { name: 'second-root' }] },
+      { pattern: '/baz/*', data: [{ name: 'superoot' }, { name: 'second-root' }, { name: 'baz' }] }
     ]
   )
 })
