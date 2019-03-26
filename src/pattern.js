@@ -19,16 +19,20 @@ module.exports.compile = function compile(str) {
 
   while ((tmp = arr.shift())) {
     c = tmp[0]
-    // TODO, handle wildcards the old way
     if (c === '*') {
-      keys.push('wild')
+      keys.push('*')
       pattern += '/(.*)'
     } else if (c === ':') {
-      o = tmp.indexOf('?', 1)
-      ext = tmp.indexOf('.', 1)
-      keys.push(tmp.substring(1, ~o ? o : ~ext ? ext : tmp.length))
-      pattern += !!~o && !~ext ? '(?:/([^/]+?))?' : '/([^/]+?)'
-      if (~ext) pattern += (~o ? '?' : '') + '\\' + tmp.substring(ext)
+      if (tmp.indexOf('*') === tmp.length - 1) {
+        keys.push(tmp.substr(1, tmp.length - 2))
+        pattern += '/(.*)'
+      } else {
+        o = tmp.indexOf('?', 1)
+        ext = tmp.indexOf('.', 1)
+        keys.push(tmp.substring(1, ~o ? o : ~ext ? ext : tmp.length))
+        pattern += !!~o && !~ext ? '(?:/([^/]+?))?' : '/([^/]+?)'
+        if (~ext) pattern += (~o ? '?' : '') + '\\' + tmp.substring(ext)
+      }
     } else {
       pattern += '/' + tmp
     }

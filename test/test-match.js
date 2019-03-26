@@ -32,10 +32,10 @@ test('match optional param segments', () => {
 })
 
 test('match splat param segments', () => {
-  eq(match('/*', '/').params, { wild: null })
-  eq(match('/*', '/a').params, { wild: 'a' })
-  eq(match('/*', '/a/b').params, { wild: 'a/b' })
-  eq(match('/*', '/a/b/c').params, { wild: 'a/b/c' })
+  eq(match('/:foo*', '/').params, { foo: null })
+  eq(match('/:foo*', '/a').params, { foo: 'a' })
+  eq(match('/:foo*', '/a/b').params, { foo: 'a/b' })
+  eq(match('/:foo*', '/a/b/c').params, { foo: 'a/b/c' })
 })
 
 test('match catch all', () => {
@@ -44,7 +44,7 @@ test('match catch all', () => {
     pathname: '/some/thing',
     pattern: '*',
     params: {
-      wild: 'some/thing'
+      '*': 'some/thing'
     },
     query: {
       abc: '1'

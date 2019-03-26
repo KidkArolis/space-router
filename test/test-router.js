@@ -4,6 +4,7 @@ const qs = require('../src/qs')
 
 suite('space-router')
 
+// TODO - split into individual tests
 test('createRouter() / .listen(onTransition) / .push(url) / .stop()', () => {
   const calls = []
 

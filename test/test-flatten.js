@@ -93,7 +93,7 @@ test('handles nested routes', () => {
       {
         pattern: '/baz/*',
         re: {
-          keys: ['wild'],
+          keys: ['*'],
           pattern: /^\/baz\/(.*)\/?$/i
         },
         data: [{ name: 'superoot' }, { name: 'second-root' }, { name: 'baz' }]
