@@ -1,18 +1,20 @@
+const { compile } = require('./pattern')
+
 module.exports = function flatten(routeMap) {
-  const routes = []
+  const result = []
   const parentData = []
   addLevel(routeMap)
-  return routes
+  return result
 
   function addLevel(level) {
     level.forEach(route => {
-      const { path, routes: children, ...routeData } = route
+      const { path, routes, ...routeData } = route
       if (path) {
-        routes.push({ pattern: path, data: parentData.concat([routeData]) })
+        result.push({ pattern: path, re: compile(path), data: parentData.concat([routeData]) })
       }
-      if (children) {
+      if (routes) {
         parentData.push(routeData)
-        addLevel(children)
+        addLevel(routes)
         parentData.pop()
       }
     })

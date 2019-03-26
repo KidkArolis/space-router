@@ -2,23 +2,29 @@ const matcher = require('./match')
 const flatten = require('./flatten')
 const createHistory = require('./history')
 const defaultQs = require('./qs')
+const links = require('./links')
+
+const defaultMode = 'history'
 
 module.exports = function createRouter(options = {}) {
-  let onTransition = []
+  let onTransition
   let history
+  let unintercept
   let routes = []
-  let mode = options.mode || 'history'
+  let mode = options.mode || defaultMode
   let qs = options.qs || defaultQs
+  let intercept = options.intercept
 
   function transition() {
-    const route = match(history.url())
-    route && onTransition({ route, data: router.data(route.pattern) })
+    const m = router.match(history.url())
+    m && onTransition(m)
   }
 
   function match(url) {
     return matcher(routes, url, qs)
   }
 
+  // TODO, merge inside href()
   function merge(current, options) {
     options = options || {}
     const pathname = options.pathname || options.pattern || current.pattern
@@ -30,9 +36,17 @@ module.exports = function createRouter(options = {}) {
 
   const router = {
     options(options) {
-      // TODO - restart history if mode changed
-      mode = options.mode || 'history'
       qs = options.qs || defaultQs
+      const nextMode = options.mode || defaultMode
+      if (intercept !== options.intercept) {
+        intercept = options.intercept
+        if (intercept) unintercept = links.intercept()
+      }
+      if (mode !== nextMode) {
+        mode = nextMode
+        history && history.stop()
+        history = createHistory({ mode }, transition)
+      }
       return router
     },
 
@@ -44,20 +58,14 @@ module.exports = function createRouter(options = {}) {
     listen(onTransitionFn) {
       onTransition = onTransitionFn
       history = createHistory({ mode }, transition)
+      if (intercept) unintercept = links.intercept()
       transition()
       return router
     },
 
-    data(pattern) {
-      for (let i = 0; i < routes.length; i++) {
-        if (routes[i].pattern === pattern) {
-          return routes[i].data
-        }
-      }
-    },
-
     stop() {
       history && history.stop()
+      unintercept && unintercept()
       return router
     },
 
@@ -71,36 +79,42 @@ module.exports = function createRouter(options = {}) {
       history.push(url, options)
     },
 
+    data(pattern) {
+      for (let i = 0; i < routes.length; i++) {
+        if (routes[i].pattern === pattern) {
+          return routes[i].data
+        }
+      }
+    },
+
     match(url) {
       const route = match(url)
-      return { route, data: router.data(route.pattern) }
+      if (route) return { route, data: router.data(route.pattern) }
     },
 
     href(options = {}) {
-      if (options.url) {
-        return options.url
-      }
+      if (options.url) return options.url
 
-      let pattern = options.pathname
+      let url = options.pathname
 
       if (options.params) {
         Object.keys(options.params).forEach(param => {
-          pattern = pattern.replace(':' + param, options.params[param])
+          url = url.replace(':' + param, options.params[param])
         })
       }
 
       if (options.query && Object.keys(options.query).length) {
         const query = qs.stringify(options.query)
         if (query) {
-          pattern = pattern + '?' + query
+          url = url + '?' + query
         }
       }
 
       if (options.hash) {
-        pattern += options.hash
+        url += options.hash
       }
 
-      return pattern
+      return url
     }
   }
 

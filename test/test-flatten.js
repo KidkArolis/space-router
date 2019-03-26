@@ -3,7 +3,7 @@ const flatten = require('../src/flatten')
 
 suite('flatten')
 
-test('converts array of routes to array of internap route descriptors', () => {
+test('converts array of routes to an array of internal route descriptors', () => {
   eq(
     flatten([
       {
@@ -18,10 +18,18 @@ test('converts array of routes to array of internap route descriptors', () => {
     [
       {
         pattern: '/foo',
+        re: {
+          keys: [],
+          pattern: /^\/foo\/?$/i
+        },
         data: [{ name: 'foo' }]
       },
       {
         pattern: '/bar',
+        re: {
+          keys: [],
+          pattern: /^\/bar\/?$/i
+        },
         data: [{ name: 'bar' }]
       }
     ]
@@ -58,10 +66,38 @@ test('handles nested routes', () => {
       }
     ]),
     [
-      { pattern: '/foo', data: [{ name: 'superoot' }, { name: 'root' }, { name: 'foo' }] },
-      { pattern: '/foo/bar', data: [{ name: 'superoot' }, { name: 'root' }, { name: 'foo' }, { name: 'bar' }] },
-      { pattern: '/second', data: [{ name: 'superoot' }, { name: 'second-root' }] },
-      { pattern: '/baz/*', data: [{ name: 'superoot' }, { name: 'second-root' }, { name: 'baz' }] }
+      {
+        pattern: '/foo',
+        re: {
+          keys: [],
+          pattern: /^\/foo\/?$/i
+        },
+        data: [{ name: 'superoot' }, { name: 'root' }, { name: 'foo' }]
+      },
+      {
+        pattern: '/foo/bar',
+        re: {
+          keys: [],
+          pattern: /^\/foo\/bar\/?$/i
+        },
+        data: [{ name: 'superoot' }, { name: 'root' }, { name: 'foo' }, { name: 'bar' }]
+      },
+      {
+        pattern: '/second',
+        re: {
+          keys: [],
+          pattern: /^\/second\/?$/i
+        },
+        data: [{ name: 'superoot' }, { name: 'second-root' }]
+      },
+      {
+        pattern: '/baz/*',
+        re: {
+          keys: ['wild'],
+          pattern: /^\/baz\/(.*)\/?$/i
+        },
+        data: [{ name: 'superoot' }, { name: 'second-root' }, { name: 'baz' }]
+      }
     ]
   )
 })
