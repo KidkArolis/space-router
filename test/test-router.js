@@ -4,8 +4,18 @@ const qs = require('../src/qs')
 
 suite('space-router')
 
-// TODO - split into individual tests
-test('createRouter() / .listen(onTransition) / .push(url) / .stop()', () => {
+test('createRouter()', () => {
+  const calls = []
+  const router = createTestRouter()
+  router.listen(({ route, data }) => {
+    calls.push(data[0].fn(route.params, route.query))
+  })
+  router.push('/foo')
+  eq(['foo'], calls)
+  router.stop()
+})
+
+test('push()', () => {
   const calls = []
 
   const router = createTestRouter()
@@ -19,28 +29,45 @@ test('createRouter() / .listen(onTransition) / .push(url) / .stop()', () => {
   router.push('/user/7')
   router.push('/user/8/posts')
   router.push('/bar')
+
+  eq(['foo', 'user=5', 'friends=7', 'user=7', 'catchall', 'bar'], calls)
+
+  router.stop()
+})
+
+test('push({ merge: true })', () => {
+  const calls = []
+
+  const router = createTestRouter()
+  router.listen(({ route, data }) => {
+    calls.push(data[0].fn(route.params, route.query))
+  })
+
+  router.push('/bar')
   router.push({ pattern: '/user/:id', params: { id: 1 }, merge: true })
   router.push({ params: { id: 2 }, merge: true })
   router.push({ query: { a: 1, b: 2 }, merge: true })
   router.push({ query: { b: 4, c: 5 }, merge: true })
   router.push({ query: null, merge: true })
 
-  eq(
-    [
-      'foo',
-      'user=5',
-      'friends=7',
-      'user=7',
-      'catchall',
-      'bar',
-      'user=1',
-      'user=2',
-      'user=2?a=1&b=2',
-      'user=2?a=1&b=4&c=5',
-      'user=2'
-    ],
-    calls
-  )
+  eq(['bar', 'user=1', 'user=2', 'user=2?a=1&b=2', 'user=2?a=1&b=4&c=5', 'user=2'], calls)
+
+  router.stop()
+})
+
+test('push({ replace: true })', () => {
+  const calls = []
+
+  const router = createTestRouter()
+  router.listen(({ route, data }) => {
+    calls.push(data[0].fn(route.params, route.query))
+  })
+
+  router.push('/bar')
+  router.push({ pattern: '/user/:id', params: { id: 1 }, replace: true })
+  router.push({ params: { id: 2 }, merge: true, replace: true })
+
+  eq(['bar', 'user=1', 'user=2'], calls)
 
   router.stop()
 })

@@ -1,17 +1,17 @@
 # space-router
 
-Minimal, yet awesome, batteries included universal router.
+Minimal batteries included universal router.
 
 Space router packs all the features you need to always keep your app in sync with the url. It's different from most other routers in that there is only a single callback. Use this callback to rerender your app or update your store on each url change.
 
 Space router:
 
 - listens to url changes via popstate and/or hashchange
-- handles all link clicks in your app
 - extracts url parameters and parses query strings
 - supports nested routes
 - should fit a wide range of application architectures and frameworks
 - has no dependencies and weights 2kb
+- optionally automatically handles all link clicks in your app
 
 ## Usage
 
@@ -51,7 +51,7 @@ const NotFound = props => <div>404</div>
 
 const router = createRouter([
   ['', App, [['/', Home], ['/channels', Channels], ['/channels/:id', Channel], ['*', NotFound]]]
-]).start(render)
+]).listen(render)
 
 function render(route, components) {
   let app = components.reduceRight(
@@ -68,23 +68,22 @@ And here's more of the router API:
 // navigate to the urls
 router.push('/channels')
 router.push('/channels/5')
-router.push('/video/5', { query: { t: '30s' } })
+router.push({ pathname: '/video/5', { query: { t: '30s' } })
 
 // replace instead of pushing
-router.push('/channels/6', { replace: true })
-router.replace('/channels/6')
+router.push({ url: '/channels/6', replace: true })
 
 // update parts of the url
-router.set({ params: { id: 1 } })
-router.set({ params: { id: 1 }, replace: true })
-router.set({ query: null })
+router.push({ params: { id: 1 }, merge: true })
+router.push({ params: { id: 1 }, merge: true, replace: true })
+router.push({ query: null, merge: true })
 
 // get data (components, objects, etc.) associated with a route patterm
 router.data('/channels/:id')
 
 // generate links
-router.href('/video/5', { query: { t: '25s' } })
-router.href('/video/:id', { params: { id: 5 }, query: { t: '25s' }, hash: '#foo' })
+router.href({ pathname: '/video/5', query: { t: '25s' } })
+router.href({ pathname: '/video/:id', { params: { id: 5 }, query: { t: '25s' }, hash: '#foo' } })
 
 // match a url and retrieve details and data { route, data }, useful for SSR
 router.match('/channels/5?t=25s')
@@ -101,14 +100,14 @@ You can use [jetpack](https://github.com/KidkArolis/jetpack) to try these exampl
 - `routes` an array of arrays of route definitions, e.g. e.g. `['/:pattern', Component, [...children]]`
 - `options` object of shape `{ mode, interceptLinks, qs }`
   - `mode` - one of `history`, `hash`, `memory`, default is `history`
-  - `interceptLinks` - whether to handle `<a>` clicks, default is `true`
+  - `interceptLinks` - whether to handle `<a>` clicks, default is `false`
   - `qs` - a custom query string parser, object of shape `{ parse, stringify }`
 
-### `start(onTransition)`
+### `listen(onTransition)`
 
 Start the routing, will immediately call `onTransition` based on the current URL.
 
-- `onTransition` is called with `(route, data)`
+- `onTransition` is called with `({ route, data })`
   - `route` is an object of shape `{ pattern, href, pathname, params, query, hash }`
   - `data` is an array of datas associated with this route
 
@@ -116,36 +115,27 @@ Start the routing, will immediately call `onTransition` based on the current URL
 
 Stop the routing, remove DOM `click` and `popstate/hashchange` listeners.
 
-### `push(url, options)`
+### `push(url | options)`
 
 Navigate to a url. Updates browser URL and calls `onTransition`.
 
-- `url` a relative url string or a route pattern
-- `options` an object of shape `{ replace, params, query, hash }`
+- `url` can be a relative url string
+- `options` an object of shape `{ url, pathname, params, query, hash, replace, merge }`
 
-### `replace(url, options)`
-
-Navigate to a url. Replaces the current browser URL without adding a new history entry and calls `onTransition`.
-
-- `url` a relative url string or a route pattern
-- `options` an object of shape `{ params, query, hash }`
-
-### `set(options)`
-
-Update any part of the URL without losing existing parameters. Replaces the current browser and calls `onTransition`.
-
-- `options` an object of shape `{ replace, pattern, params, query, hash }`
+Pass `url` with a full preconstructed url.
+Or pass `pathname` string, `params` object, `query` object and hash string to construct a url.
+Pass `replace: true` to upadte the current browser URL without adding a new history entry.
+Pass `merge: true` to merge some bits into current url, e.g. `push({ query: { s: 'a' }, merge: true })`
 
 ### `match(url)`
 
 Match the url against the routes and return `{ route, data }`. Useful in SSR.
 
-### `href(url, options)`
+### `href(options)`
 
 Generate a url. Useful if you want to append query string or if you're using mixed history/hash mode and you don't know which one is in play. Href will prepend urls with '#' when in hash mode.
 
-- `url` - can be a full url or a pattern
-- `options` object of shape { params, query, hash }
+- `options` an object of shape `{ url, pathname, params, query, hash, merge }`
 
 ### `data(pattern)`
 

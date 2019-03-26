@@ -7,13 +7,11 @@ const links = require('./links')
 const defaultMode = 'history'
 
 module.exports = function createRouter(options = {}) {
-  let onTransition
-  let history
-  let unintercept
+  let onTransition, history, unintercept
   let routes = []
   let mode = options.mode || defaultMode
   let qs = options.qs || defaultQs
-  let intercept = options.intercept
+  let interceptLinks = options.interceptLinks
 
   function transition() {
     const m = router.match(history.url())
@@ -24,32 +22,7 @@ module.exports = function createRouter(options = {}) {
     return matcher(routes, url, qs)
   }
 
-  // TODO, merge inside href()
-  function merge(current, options) {
-    options = options || {}
-    const pathname = options.pathname || options.pattern || current.pattern
-    const params = Object.assign({}, current.params, options.params)
-    const query = options.query === null ? null : Object.assign({}, current.query, options.query)
-    const hash = options.hash === null ? null : options.hash || current.hash || ''
-    return { pathname, params, query, hash }
-  }
-
   const router = {
-    options(options) {
-      qs = options.qs || defaultQs
-      const nextMode = options.mode || defaultMode
-      if (intercept !== options.intercept) {
-        intercept = options.intercept
-        if (intercept) unintercept = links.intercept()
-      }
-      if (mode !== nextMode) {
-        mode = nextMode
-        history && history.stop()
-        history = createHistory({ mode }, transition)
-      }
-      return router
-    },
-
     map(nextRoutes) {
       routes = flatten(nextRoutes)
       return router
@@ -58,7 +31,7 @@ module.exports = function createRouter(options = {}) {
     listen(onTransitionFn) {
       onTransition = onTransitionFn
       history = createHistory({ mode }, transition)
-      if (intercept) unintercept = links.intercept()
+      if (interceptLinks) unintercept = links.intercept(match, history)
       transition()
       return router
     },
@@ -70,13 +43,11 @@ module.exports = function createRouter(options = {}) {
     },
 
     push(options) {
-      if (options.merge) {
-        const route = match(history.url())
-        options = merge(route, options)
+      if (typeof options === 'string') {
+        history.push(options)
+      } else {
+        history.push(router.href(options), options)
       }
-      const url = typeof options === 'string' ? options : router.href(options)
-      options = typeof options === 'string' ? {} : options
-      history.push(url, options)
     },
 
     data(pattern) {
@@ -92,10 +63,21 @@ module.exports = function createRouter(options = {}) {
       if (route) return { route, data: router.data(route.pattern) }
     },
 
-    href(options = {}) {
-      if (options.url) return options.url
+    href(options = {}, currentUrl) {
+      if (options.url) {
+        return options.url
+      }
 
-      let url = options.pathname
+      if (options.merge) {
+        const current = match(currentUrl || history.url())
+        const pathname = options.pathname || options.pattern || current.pattern
+        const params = Object.assign({}, current.params, options.params)
+        const query = options.query === null ? null : Object.assign({}, current.query, options.query)
+        const hash = options.hash === null ? null : options.hash || current.hash || ''
+        options = { pathname, params, query, hash }
+      }
+
+      let url = options.pathname || options.pattern
 
       if (options.params) {
         Object.keys(options.params).forEach(param => {
