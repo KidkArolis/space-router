@@ -1,7 +1,9 @@
 {
   "name": "space-router",
+  "description": "All the routing essentials.",
   "version": "0.7.0",
-  "main": "index.js",
+  "main": "dist/cjs",
+  "module": "dist/esm",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,33 +21,35 @@
   ],
   "author": "Karolis Narkevicius",
   "scripts": {
-    "test": "healthier && nyc mocha",
-    "format": "prettier --write ./**/*.{js,md,css}"
+    "test": "healthier && prettier --check '**/*.{js,css,yml}' && nyc ava",
+    "format": "prettier --write '**/*.{js,css,yml}'",
+    "coverage": "nyc --reporter=html ava",
+    "build": "node ./tasks/build.js",
+    "watch": "node ./tasks/build.js -w",
+    "version": "npm run build",
+    "release": "np",
+    "release:beta": "np --tag=beta",
+    "release:docs": "hugo -s docs && gh-pages -d docs/public"
   },
-  "dependencies": {},
   "devDependencies": {
-    "healthier": "^2.0.0",
-    "mocha": "^5.2.0",
-    "np": "^3.0.4",
-    "nyc": "^13.0.1",
-    "prettier": "^1.16.4"
+    "ava": "^3.15.0",
+    "esm": "^3.2.25",
+    "healthier": "^4.0.0",
+    "lerna": "^4.0.0",
+    "np": "^7.5.0",
+    "nyc": "^15.1.0",
+    "prettier": "^2.4.1"
   },
   "healthier": {
     "global": [
-      "suite",
-      "test",
       "location",
-      "history"
+      "history",
+      "requestAnimationFrame"
     ]
   },
-  "standard5": {
-    "global": [
-      "location",
-      "history"
-    ],
-    "ignore": [
-      "examples",
-      "test"
+  "ava": {
+    "require": [
+      "esm"
     ]
   }
 }

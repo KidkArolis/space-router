@@ -1,3 +1,9 @@
+## 0.8.0
+
+A rewrite of space-router. It's better now!
+
+- **a**
+
 ## 0.7.0
 
 - **Improvement** - Add `replace(url, options)` in addition to `push`, because it matches the DOM API closer and the names are semantically meaningful.
