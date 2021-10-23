@@ -4,7 +4,7 @@
   "version": "0.7.0",
   "main": "dist/cjs",
   "module": "dist/esm",
-  "license": "MIT",
+  "license": "ICS",
   "repository": {
     "type": "git",
     "url": "git://github.com/KidkArolis/space-router.git"
