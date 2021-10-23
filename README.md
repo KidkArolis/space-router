@@ -22,4 +22,4 @@ In summary, Space Router:
 
 ## API
 
-See the [API Docs](https://kidkarolis.github.io/space-router) for more details.
+See the [API Docs](https://kidkarolis.github.io/space-router/) for more details.
