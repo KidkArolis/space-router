@@ -18,6 +18,14 @@ In summary, Space Router:
 - fits into a wide range of application architectures and frameworks
 - has no dependencies and weighs less than 2kb
 
+## Why?
+
+Space Router was first created in 2017 to create a minimal to handle all the routery bits after learning from routing approaches used in Backbone, Ember and then React ecosystems eras. Each new framework brought new requirements for a router, but each new router had a core that was very similar - listening to url changes, parsing url params and queries, performing navigations and generating links - those did not have to be different in any of those libraries. Space Router was created as a framework agnostic router that should be easy enough to use standalone or to wrap around into more sophisticated bindings for specific frameworks or applications architectures.
+
+Note, in case you were wondering, Space Router is not the same as [remix-run/history](https://github.com/remix-run/history/), which only wraps the history API. Space Router takes a more holistic approach with also handling url and query parsing and defining and matching route configurations. It doesn't have all the bells of whistles of the `history` package, but if you need them - use that indeed!
+
+See [React Space Router](https://humaans.github.io/react-space-router) for the official React bindings.
+
 ## Install
 
 ```sh
