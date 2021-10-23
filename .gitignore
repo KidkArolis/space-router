@@ -2,3 +2,6 @@ node_modules
 .nyc_output
 dist
 coverage
+.DS_Store
+docs/public
+docs/resources/_gen

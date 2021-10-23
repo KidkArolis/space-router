@@ -1,0 +1,9 @@
+baseURL = "https://kidkarolis.github.io/space-router"
+languageCode = "en-us"
+title = "Space Router"
+description = "A web router with all the essentials."
+
+[markup]
+  [markup.highlight]
+    noClasses = false
+    tabWidth = 4
