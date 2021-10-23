@@ -32,8 +32,11 @@
     "release:docs": "hugo -s docs && gh-pages -d docs/public"
   },
   "devDependencies": {
+    "@babel/cli": "^7.15.7",
+    "@babel/preset-env": "^7.15.8",
     "ava": "^3.15.0",
     "esm": "^3.2.25",
+    "execa": "^5.1.1",
     "healthier": "^4.0.0",
     "lerna": "^4.0.0",
     "np": "^7.5.0",
