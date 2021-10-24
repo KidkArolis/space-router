@@ -49,6 +49,10 @@
       "location",
       "history",
       "requestAnimationFrame"
+    ],
+    "ignore": [
+      "docs/static/js",
+      "docs/assets/js"
     ]
   },
   "ava": {
