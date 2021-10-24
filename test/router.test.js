@@ -24,35 +24,42 @@ test('createRouter, listen, navigate and dispose', (t) => {
 })
 
 test('.href(options)', (t) => {
-  const { router } = createTestRouter()
+  const { router, dispose } = createTestRouter()
 
   t.deepEqual('/user/7/friends?a=1&b=2', router.href({ pathname: '/user/7/friends', query: { a: 1, b: 2 } }))
 
   t.deepEqual(
-    '/user/7/friends?a=1&b=2',
-    router.href({ pathname: '/user/:id/friends', params: { id: 7 }, query: { a: 1, b: 2 } })
+    router.href({ pathname: '/user/:id/friends', params: { id: 7 }, query: { a: 1, b: 2 } }),
+    '/user/7/friends?a=1&b=2'
   )
   t.deepEqual(
-    '/user/7/friends?a=1&b=2#bla',
-    router.href({ pathname: '/user/:id/friends', params: { id: 7 }, query: { a: 1, b: 2 }, hash: '#bla' })
+    router.href({ pathname: '/user/:id/friends', params: { id: 7 }, query: { a: 1, b: 2 }, hash: '#bla' }),
+    '/user/7/friends?a=1&b=2#bla'
   )
-  t.deepEqual('/user/8/friends#foo', router.href({ pathname: '/user/:id/friends', params: { id: 8 }, hash: '#foo' }))
+  t.deepEqual(router.href({ pathname: '/user/:id/friends', params: { id: 8 }, hash: '#foo' }), '/user/8/friends#foo')
   t.deepEqual(
-    '/user/8/friends#foo',
-    router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: {}, hash: '#foo' })
-  )
-  t.deepEqual(
-    '/user/8/friends?q=null#foo',
-    router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: null }, hash: '#foo' })
+    router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: {}, hash: '#foo' }),
+    '/user/8/friends#foo'
   )
   t.deepEqual(
-    '/user/8/friends#foo',
-    router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: undefined }, hash: '#foo' })
+    router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: null }, hash: '#foo' }),
+    '/user/8/friends?q=null#foo'
   )
+  t.deepEqual(
+    router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: undefined }, hash: '#foo' }),
+    '/user/8/friends#foo'
+  )
+  t.deepEqual(
+    router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: undefined }, hash: '#foo' }),
+    '/user/8/friends#foo'
+  )
+  t.deepEqual(router.href({ params: { id: 8 }, query: { q: 1 }, hash: '#foo' }), '/?q=1#foo')
+
+  dispose()
 })
 
 test('.match(url)', (t) => {
-  const { router } = createTestRouter()
+  const { router, dispose } = createTestRouter()
 
   const route = {
     url: '/user/7/settings?a=1#hello',
@@ -65,6 +72,24 @@ test('.match(url)', (t) => {
     data: [{ datum: 'settings-data' }],
   }
   t.deepEqual(router.match('/user/7/settings?a=1#hello'), route)
+
+  dispose()
+})
+
+test('.match(url) without catch all', (t) => {
+  const { router, dispose } = createTestRouter(null, { withoutCatchAll: true })
+
+  const route = router.match('/unknown')
+  t.is(route, undefined)
+
+  dispose()
+})
+
+test('.getUrl()', (t) => {
+  const { router } = createTestRouter()
+
+  router.navigate({ url: '/user/8' })
+  t.is(router.getUrl(), '/user/8')
 })
 
 test('redirects', (t) => {
@@ -74,20 +99,26 @@ test('redirects', (t) => {
     calls.push(route.data[0].render(route.params, route.query))
   })
 
-  router.navigate({ url: '/will-redirect' })
+  router.navigate({ url: '/redirect-via-obj-1' })
+  router.navigate({ url: '/redirect-via-obj-2' })
+  router.navigate({ url: '/redirect-via-fn-1/2' })
+  router.navigate({ url: '/redirect-via-fn-2/2' })
 
-  t.deepEqual(['bar'], calls)
+  t.deepEqual(['bar', 'user=1', 'user=2', 'foo'], calls)
 
   dispose()
 })
 
-function createTestRouter(cb) {
+function createTestRouter(cb, { withoutCatchAll = false } = {}) {
   const router = createRouter({ mode: 'memory', sync: true })
   const dispose = router.listen(
     [
       { path: '/foo', render: () => 'foo' },
       { path: '/bar', render: () => 'bar' },
-      { path: '/will-redirect', redirect: '/bar' },
+      { path: '/redirect-via-obj-1', redirect: { url: 'bar' } },
+      { path: '/redirect-via-obj-2', redirect: { pathname: '/user/:id', params: { id: 1 } } },
+      { path: '/redirect-via-fn-1/:id', redirect: ({ params }) => ({ pathname: '/user/:id', params }) },
+      { path: '/redirect-via-fn-2/:id', redirect: ({ params }) => ({ url: '/foo' }) },
       {
         path: '/user/:id',
         render: (params, query) => {
@@ -97,8 +128,8 @@ function createTestRouter(cb) {
       },
       { path: '/user/:id/friends', render: (params) => 'friends=' + params.id },
       { path: '/user/:id/settings', datum: 'settings-data' },
-      { path: '*', render: () => 'catchall' },
-    ],
+      !withoutCatchAll && { path: '*', render: () => 'catchall' },
+    ].filter(Boolean),
     cb
   )
   return { router, dispose }

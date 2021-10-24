@@ -69,7 +69,9 @@ export function createRouter(options = {}) {
 
     match(url) {
       const route = findMatch(routes, url, qs)
-      return { ...route, data: data(routes, route) }
+      if (route) {
+        return { ...route, data: data(routes, route) }
+      }
     },
 
     getUrl() {
@@ -103,23 +105,25 @@ function transition(router, url, onNavigated) {
   if (route) {
     for (const r of route.data) {
       if (r.redirect) {
-        return router.navigate({
-          url: typeof r.redirect === 'string' ? r.redirect : router.href(r.redirect),
-          replace: true,
-        })
+        const url = redirectUrl(router, r.redirect, route)
+        return router.navigate({ url, replace: true })
       }
     }
     onNavigated && onNavigated(route)
   }
 }
 
-function data(routes, { pattern } = {}) {
-  if (pattern) {
-    for (let i = 0; i < routes.length; i++) {
-      if (routes[i].pattern === pattern) {
-        return routes[i].data
-      }
+function redirectUrl(router, redirect, matchingRoute) {
+  if (typeof redirect === 'function') {
+    redirect = redirect(matchingRoute)
+  }
+  return redirect.url ? redirect.url : router.href(redirect)
+}
+
+function data(routes, matchingRoute) {
+  for (let i = 0; i < routes.length; i++) {
+    if (routes[i].pattern === matchingRoute.pattern) {
+      return routes[i].data
     }
   }
-  return []
 }
