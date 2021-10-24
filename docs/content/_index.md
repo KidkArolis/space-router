@@ -8,7 +8,7 @@ toc: true
 
 > Framework agnostic router for single page apps
 
-Space Router packs all the features you need to keep your app in sync with the url. It's distinct from many other routers in that there is only **a single callback**. This callback can be used to re-render your applocation, update a store and perform other actions on each url change. Space Router is also **stateless**, it doesn't store the current route leaving state completely up to you to handle.
+Space Router packs all the features you need to keep your app in sync with the url. It's distinct from many other routers in that there is only **a single callback**. This callback can be used to re-render your applocation, update a store and perform other actions on each url change. Space Router is **stateless**, it doesn't store the current route leaving state completely up to you to handle.
 
 In summary, Space Router:
 
@@ -20,11 +20,11 @@ In summary, Space Router:
 
 ## Why?
 
-Space Router was first created in 2017 to create a minimal to handle all the routery bits after learning from routing approaches used in Backbone, Ember and then React ecosystems eras. Each new framework brought new requirements for a router, but each new router had a core that was very similar - listening to url changes, parsing url params and queries, performing navigations and generating links - those did not have to be different in any of those libraries. Space Router was created as a framework agnostic router that should be easy enough to use standalone or to wrap around into more sophisticated bindings for specific frameworks or applications architectures.
+Space Router was first created in 2017 to create a minimal library after learning from the various routing approaches used in Backbone, Ember and then React eras. Each new framework brought new requirements for a router, but each new router had a core that was very similar – listening to url changes, parsing url params and queries, performing navigations and generating links. Space Router was created as a framework agnostic router that should be easy enough to use standalone _or_ to built on top of to create more sophisticated bindings for specific frameworks or applications architectures.
 
-Note, in case you were wondering, Space Router is not the same as [remix-run/history](https://github.com/remix-run/history/), which only wraps the history API. Space Router takes a more holistic approach with also handling url and query parsing and defining and matching route configurations. It doesn't have all the bells of whistles of the `history` package, but if you need them - use that indeed!
+What about [remix-run/history](https://github.com/remix-run/history/)? History wraps the history API only. Space Router takes a more holistic approach with handling url and query parsing and declaring and matching route configurations to create a fully usable standalone router. It doesn't have all the bells of whistles of the `history` package, but if you need them - use that instead.
 
-See [React Space Router](https://humaans.github.io/react-space-router) for the official React bindings.
+See [React Space Router](https://humaans.github.io/react-space-router) for the official React bindings that provide a set of hooks and components to make space router a fully featured routing library for React.
 
 ## Install
 
@@ -68,6 +68,8 @@ export const dispose = router.listen(routes, render)
 // route data, updating a store and so on, bind this to your application
 // the way it makes sense for your framework and architecture
 function render(route) {
+  // using reduceRight here to take the list of the nested components
+  // e.g. App > Home and render then right to left inside each other
   const app = route.data.reduceRight((children, d) => {
     const { component: Component } = d
     return <Component params={route.params}>{children}</Component>

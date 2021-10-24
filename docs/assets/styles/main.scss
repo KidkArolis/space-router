@@ -1343,6 +1343,7 @@ tr.border-none td {
 }
 
 #gradient-canvas {
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -1357,4 +1358,8 @@ tr.border-none td {
   --gradient-color-4: #ff3a00;
   z-index: -1;
   opacity: 0.5;
+
+  @media (min-width: 768px) {
+    display: block;
+  }
 }
