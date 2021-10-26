@@ -45,6 +45,11 @@ export function createRouter(options = {}) {
     },
 
     href(to) {
+      if (to.merge) {
+        const curr = router.match(router.getUrl())
+        to = merge(curr, to)
+      }
+
       let url = to.pathname || '/'
 
       if (to.params) {
@@ -61,7 +66,8 @@ export function createRouter(options = {}) {
       }
 
       if (to.hash) {
-        url += to.hash
+        const prefix = to.hash.startsWith('#') ? '' : '#'
+        url = url + prefix + to.hash
       }
 
       return url
@@ -126,4 +132,12 @@ function data(routes, matchingRoute) {
       return routes[i].data
     }
   }
+}
+
+export function merge(curr, to) {
+  const pathname = to.pathname || curr.pattern
+  const params = Object.assign({}, curr.params, to.params)
+  const query = to.query === null ? null : Object.assign({}, curr.query, to.query)
+  const hash = to.hash === null ? null : to.hash || curr.hash || ''
+  return { pathname, params, query, hash }
 }

@@ -5,7 +5,7 @@ test('createRouter, listen, navigate and dispose', (t) => {
   const calls = []
 
   const { router, dispose } = createTestRouter((route) => {
-    calls.push(route.data[0].render(route.params, route.query))
+    calls.push(route.data[0].render(route.params, route.query, route.hash))
   })
 
   router.navigate({ url: '/foo' })
@@ -17,8 +17,27 @@ test('createRouter, listen, navigate and dispose', (t) => {
   router.navigate({ url: '/user/1' })
   router.navigate({ pathname: '/user/:id', params: { id: 2 } })
   router.navigate({ pathname: '/user/2', query: { a: 1, b: 2 } })
+  router.navigate({ query: { a: 11, b: 22 }, merge: true })
+  router.navigate({ query: { b: undefined, c: 'bla' }, hash: 'test', merge: true })
+  router.navigate({ params: { id: 3 }, merge: true })
 
-  t.deepEqual(['foo', 'user=5', 'friends=7', 'user=7', 'catchall', 'bar', 'user=1', 'user=2', 'user=2?a=1&b=2'], calls)
+  t.deepEqual(
+    [
+      'foo',
+      'user=5',
+      'friends=7',
+      'user=7',
+      'catchall',
+      'bar',
+      'user=1',
+      'user=2',
+      'user=2?a=1&b=2',
+      'user=2?a=11&b=22',
+      'user=2?a=11&c=bla#test',
+      'user=3?a=11&c=bla#test',
+    ],
+    calls
+  )
 
   dispose()
 })
@@ -121,9 +140,9 @@ function createTestRouter(cb, { withoutCatchAll = false } = {}) {
       { path: '/redirect-via-fn-2/:id', redirect: ({ params }) => ({ url: '/foo' }) },
       {
         path: '/user/:id',
-        render: (params, query) => {
+        render: (params, query, hash = '') => {
           const q = query && Object.keys(query).length ? `?${qs.stringify(query)}` : ''
-          return 'user=' + params.id + q
+          return 'user=' + params.id + q + hash
         },
       },
       { path: '/user/:id/friends', render: (params) => 'friends=' + params.id },
