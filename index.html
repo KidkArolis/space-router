@@ -42,16 +42,16 @@
 
   <link rel="canonical" href="https://kidkarolis.github.io/space-router/">  
 
-  <meta name="twitter:title" content="Figbird">
+  <meta name="twitter:title" content="Space Router">
   <meta name="twitter:description" content="Effortless realtime data management for React + Feathers applications.">
   <meta name="twitter:card" content="summary"/>
-  <meta name="twitter:image" content="https://humaans.github.io/figbird/figbird.jpg"/>
-  <meta name="twitter:image:alt" content="Figbird"/>
+  <meta name="twitter:image" content="https://humaans.github.io/space-router/space.png"/>
+  <meta name="twitter:image:alt" content="Space Router"/>
 
-  <meta property="og:title" content="Figbird" />
+  <meta property="og:title" content="Space Router" />
   <meta property="og:description" content="Effortless realtime data management for React + Feathers applications.">
-  <meta property="og:url" content="https://humaans.github.io/figbird/" />
-  <meta property="og:image" content="https://humaans.github.io/figbird/figbird.jpg" />
+  <meta property="og:url" content="https://humaans.github.io/space-router/" />
+  <meta property="og:image" content="https://humaans.github.io/space-router/space.png" />
 
   <link
   rel="shortcut icon"
@@ -82,13 +82,13 @@
   <div id="main">
     <div id="kube-component" class="content">
       <div class="Image">
-        <img src="space2.png" />
+        <img src="space.png" />
       </div>
       <h1 id="space-router">Space Router</h1>
 <blockquote>
 <p>Framework agnostic router for single page apps</p>
 </blockquote>
-<p>Space Router packs all the features you need to keep your app in sync with the url. It&rsquo;s distinct from many other routers in that there is only <strong>a single callback</strong>. This callback can be used to re-render your applocation, update a store and perform other actions on each url change. Space Router is also <strong>stateless</strong>, it doesn&rsquo;t store the current route leaving state completely up to you to handle.</p>
+<p>Space Router packs all the features you need to keep your app in sync with the url. It&rsquo;s distinct from many other routers in that there is only <strong>a single callback</strong>. This callback can be used to re-render your applocation, update a store and perform other actions on each url change. Space Router is <strong>stateless</strong>, it doesn&rsquo;t store the current route leaving state completely up to you to handle.</p>
 <p>In summary, Space Router:</p>
 <ul>
 <li>listens to url changes using popstate or hashchange event</li>
@@ -98,9 +98,9 @@
 <li>has no dependencies and weighs less than 2kb</li>
 </ul>
 <h2 id="why">Why?</h2>
-<p>Space Router was first created in 2017 to create a minimal to handle all the routery bits after learning from routing approaches used in Backbone, Ember and then React ecosystems eras. Each new framework brought new requirements for a router, but each new router had a core that was very similar - listening to url changes, parsing url params and queries, performing navigations and generating links - those did not have to be different in any of those libraries. Space Router was created as a framework agnostic router that should be easy enough to use standalone or to wrap around into more sophisticated bindings for specific frameworks or applications architectures.</p>
-<p>Note, in case you were wondering, Space Router is not the same as <a href="https://github.com/remix-run/history/">remix-run/history</a>, which only wraps the history API. Space Router takes a more holistic approach with also handling url and query parsing and defining and matching route configurations. It doesn&rsquo;t have all the bells of whistles of the <code>history</code> package, but if you need them - use that indeed!</p>
-<p>See <a href="https://humaans.github.io/react-space-router">React Space Router</a> for the official React bindings.</p>
+<p>Space Router was first created in 2017 to create a minimal library after learning from the various routing approaches used in Backbone, Ember and then React eras. Each new framework brought new requirements for a router, but each new router had a core that was very similar – listening to url changes, parsing url params and queries, performing navigations and generating links. Space Router was created as a framework agnostic router that should be easy enough to use standalone <em>or</em> to built on top of to create more sophisticated bindings for specific frameworks or applications architectures.</p>
+<p>What about <a href="https://github.com/remix-run/history/">remix-run/history</a>? History wraps the history API only. Space Router takes a more holistic approach with handling url and query parsing and declaring and matching route configurations to create a fully usable standalone router. It doesn&rsquo;t have all the bells of whistles of the <code>history</code> package, but if you need them - use that instead.</p>
+<p>See <a href="https://humaans.github.io/react-space-router">React Space Router</a> for the official React bindings that provide a set of hooks and components to make space router a fully featured routing library for React.</p>
 <h2 id="install">Install</h2>
 <div class="highlight"><pre class="chroma"><code class="language-sh" data-lang="sh">npm i space-router
 </code></pre></div><h2 id="example">Example</h2>
@@ -137,7 +137,9 @@
 </span><span class="c1">// route data, updating a store and so on, bind this to your application
 </span><span class="c1">// the way it makes sense for your framework and architecture
 </span><span class="c1"></span><span class="kd">function</span> <span class="nx">render</span><span class="p">(</span><span class="nx">route</span><span class="p">)</span> <span class="p">{</span>
-  <span class="kr">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">route</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">reduceRight</span><span class="p">((</span><span class="nx">children</span><span class="p">,</span> <span class="nx">d</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+  <span class="c1">// using reduceRight here to take the list of the nested components
+</span><span class="c1"></span>  <span class="c1">// e.g. App &gt; Home and render then right to left inside each other
+</span><span class="c1"></span>  <span class="kr">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">route</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">reduceRight</span><span class="p">((</span><span class="nx">children</span><span class="p">,</span> <span class="nx">d</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
     <span class="kr">const</span> <span class="p">{</span> <span class="nx">component</span><span class="o">:</span> <span class="nx">Component</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">d</span>
     <span class="k">return</span> <span class="o">&lt;</span><span class="nx">Component</span> <span class="nx">params</span><span class="o">=</span><span class="p">{</span><span class="nx">route</span><span class="p">.</span><span class="nx">params</span><span class="p">}</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">children</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/Component&gt;</span>
   <span class="p">},</span> <span class="kc">null</span><span class="p">)</span>
@@ -188,10 +190,12 @@
 <li><code>query</code> the query object that will be passed through <code>qs.stringify</code></li>
 <li><code>hash</code> the hash fragment to append to the url of the url</li>
 <li><code>replace</code> set to true to replace the current entry in the navigation stack instead of pushing</li>
+<li><code>merge</code> set to true to merge in the params from the current URL</li>
 </ul>
 </li>
 </ul>
 <p>Note, if <code>url</code> option is provided, the <code>pathname</code>, <code>params</code>, <code>query</code> and <code>hash</code> will be ignored.</p>
+<p>Note, be careful when using <code>merge</code> as this reads the location&rsquo;s current URL which might be different from the one you store in your application&rsquo;s state in case you&rsquo;re performing async logic in the listen callback.</p>
 <h3 id="match"><code>match</code></h3>
 <div class="highlight"><pre class="chroma"><code class="language-js" data-lang="js"><span class="kr">const</span> <span class="nx">route</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span>
 </code></pre></div><p>Match the url against the routes and return the matching route object. Useful in server side rendering to translate the request URL to a matching route.</p>
