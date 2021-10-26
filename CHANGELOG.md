@@ -2,7 +2,13 @@
 
 A rewrite of space-router. It's better now!
 
-- **a**
+- less methods (only `listen`, `navigate`, `match`, `href` and `getUrl`)
+- simpler function signatures and simpler listen callback - you just get the route, not route+data
+- improved route config format with objects (`path`, `redirect`, `routes`) instead of arrays
+- redirects feature
+- new docs at [https://kidkarolis.github.io/space-router/](https://kidkarolis.github.io/space-router/)
+
+All in all - it's a new API, but it's spiritually very much the same and is the best version of Space Router yet!
 
 ## 0.7.0
 
