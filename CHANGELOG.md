@@ -1,3 +1,7 @@
+## 0.8.2
+
+- refer to `setImmediate` via `global.setImmediate` to fix a webpack compilation error
+
 ## 0.8.1
 
 - allow passing current route as `merge` value to opt out of using current url and using an externally passed in route, useful in async context where reading current URL might not be safe

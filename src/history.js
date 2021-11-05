@@ -9,7 +9,7 @@ export function createHistory(onChange, options) {
 
   if (typeof window === 'undefined') {
     mode = 'memory'
-    raf = sync ? (cb) => cb() : setImmediate
+    raf = sync ? (cb) => cb() : global.setImmediate
   } else {
     raf = sync ? (cb) => cb() : requestAnimationFrame
     if (mode === 'history' && !history.pushState) {
