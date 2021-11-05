@@ -46,7 +46,7 @@ export function createRouter(options = {}) {
 
     href(to) {
       if (to.merge) {
-        const curr = router.match(router.getUrl())
+        const curr = to.merge === true ? router.match(router.getUrl()) : to.merge
         to = merge(curr, to)
       }
 
@@ -134,7 +134,7 @@ function data(routes, matchingRoute) {
   }
 }
 
-export function merge(curr, to) {
+export function merge(curr = {}, to) {
   const pathname = to.pathname || curr.pattern
   const params = Object.assign({}, curr.params, to.params)
   const query = to.query === null ? null : Object.assign({}, curr.query, to.query)
