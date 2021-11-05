@@ -27,8 +27,8 @@
     "build": "node ./tasks/build.js",
     "watch": "node ./tasks/build.js -w",
     "version": "npm run build",
-    "release": "np",
-    "release:beta": "np --tag=beta",
+    "release": "np --no-release-draft",
+    "release:beta": "np --tag=beta --no-release-draft",
     "release:docs": "hugo -s docs && gh-pages -d docs/public"
   },
   "devDependencies": {
