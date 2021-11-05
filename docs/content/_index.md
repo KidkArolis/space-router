@@ -128,7 +128,7 @@ Navigates to a URL described.
   - `query` the query object that will be passed through `qs.stringify`
   - `hash` the hash fragment to append to the url of the url
   - `replace` set to true to replace the current entry in the navigation stack instead of pushing
-  - `merge` set to true to merge in the params from the current URL
+  - `merge` set to true to merge in the params from the current URL, alternatively set to the current route object to use that as the current route to be used in merging
 
 Note, if `url` option is provided, the `pathname`, `params`, `query` and `hash` will be ignored.
 
