@@ -128,8 +128,8 @@
 <span class="c1">// create the router
 </span><span class="c1"></span><span class="kr">const</span> <span class="nx">router</span> <span class="o">=</span> <span class="nx">createRouter</span><span class="p">()</span>
 
-<span class="c1">// start listening to the URL changes and kick of the initial render
-</span><span class="c1">// based on the current URL
+<span class="c1">// start listening to the url changes and kick of the initial render
+</span><span class="c1">// based on the current url
 </span><span class="c1"></span><span class="kr">export</span> <span class="kr">const</span> <span class="nx">dispose</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="nx">routes</span><span class="p">,</span> <span class="nx">render</span><span class="p">)</span>
 
 <span class="c1">// every time the route changes, do something, e.g. re-render your app
@@ -148,7 +148,7 @@
 </code></pre></div><h2 id="api">API</h2>
 <h3 id="createrouter"><code>createRouter</code></h3>
 <div class="highlight"><pre class="chroma"><code class="language-js" data-lang="js"><span class="kr">const</span> <span class="nx">router</span> <span class="o">=</span> <span class="nx">createRouter</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span>
-</code></pre></div><p>Creates the router object.</p>
+</code></pre></div><p>Create the router object.</p>
 <ul>
 <li><code>options</code> object
 <ul>
@@ -159,12 +159,12 @@
 </ul>
 <h3 id="listen"><code>listen</code></h3>
 <div class="highlight"><pre class="chroma"><code class="language-js" data-lang="js"><span class="kr">const</span> <span class="nx">dispose</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="nx">routes</span><span class="p">,</span> <span class="nx">onChange</span><span class="p">)</span>
-</code></pre></div><p>Starts listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, the <code>onChange</code> callback will get called with the matched <code>route</code> object.</p>
-<p>Note, calling listen will immediately call <code>onChange</code> based on the current URL when in <code>history</code> or <code>hash</code> modes. This does not happen in <code>memory</code> mode so that you could perform the initial navigation yourself since there is no URL to read from in that case.</p>
+</code></pre></div><p>Start listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, the <code>onChange</code> callback will get called with the matched <code>route</code> object.</p>
+<p>Note, calling listen will immediately call <code>onChange</code> based on the current url when in <code>history</code> or <code>hash</code> modes. This does not happen in <code>memory</code> mode so that you could perform the initial navigation yourself since there is no url to read from in that case.</p>
 <ul>
 <li><code>routes</code> an array of arrays of route definitions, where each route is an object of shape <code>{ path, redirect, routes, ...metadata }</code>
 <ul>
-<li><code>path</code> is the URL pattern to match that can include named parameters as segments</li>
+<li><code>path</code> is the url pattern to match that can include named parameters as segments</li>
 <li><code>redirect</code> can be a string or a function that redirects upon entering that route</li>
 <li><code>routes</code> is a nested object of nested route definitions</li>
 <li><code>...metadata</code> all other other keys can be chosen by you</li>
@@ -180,9 +180,9 @@
 <p>Listen returns a <code>dispose</code> function that stops listening to url changes.</p>
 <h3 id="navigate"><code>navigate</code></h3>
 <div class="highlight"><pre class="chroma"><code class="language-js" data-lang="js"><span class="nx">router</span><span class="p">.</span><span class="nx">navigate</span><span class="p">(</span><span class="nx">to</span><span class="p">)</span>
-</code></pre></div><p>Navigates to a URL described.</p>
+</code></pre></div><p>Navigate to a url. Navigating will update the browser&rsquo;s location bar, depending no the mode the router is in and will call the router listener callback with the newly matched route.</p>
 <ul>
-<li><code>to</code> - navigation target
+<li><code>to</code> - a <code>string</code> url or an <code>object</code> with the following properties
 <ul>
 <li><code>url</code> a relative url string or a route pattern</li>
 <li><code>pathname</code> the pathname portion of the target url, which can include named segments</li>
@@ -190,25 +190,26 @@
 <li><code>query</code> the query object that will be passed through <code>qs.stringify</code></li>
 <li><code>hash</code> the hash fragment to append to the url of the url</li>
 <li><code>replace</code> set to true to replace the current entry in the navigation stack instead of pushing</li>
-<li><code>merge</code> set to true to merge in the params from the current URL, alternatively set to the current route object to use that as the current route to be used in merging</li>
+<li><code>merge</code> set to true to merge in the params from the current url, alternatively set to the current route object to use that as the current route to be used in merging</li>
 </ul>
 </li>
 </ul>
 <p>Note, if <code>url</code> option is provided, the <code>pathname</code>, <code>params</code>, <code>query</code> and <code>hash</code> will be ignored.</p>
-<p>Note, be careful when using <code>merge</code> as this reads the location&rsquo;s current URL which might be different from the one you store in your application&rsquo;s state in case you&rsquo;re performing async logic in the listen callback.</p>
+<p>Note, be careful when using <code>merge</code> as this reads the location&rsquo;s current url which might be different from the one you store in your application&rsquo;s state in case you&rsquo;re performing async logic in the listen callback.</p>
 <h3 id="match"><code>match</code></h3>
 <div class="highlight"><pre class="chroma"><code class="language-js" data-lang="js"><span class="kr">const</span> <span class="nx">route</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span>
-</code></pre></div><p>Match the url against the routes and return the matching route object. Useful in server side rendering to translate the request URL to a matching route.</p>
+</code></pre></div><p>Match the url string against the routes and return the matching route object. Useful in server side rendering to translate the request url to a matching route.</p>
 <h3 id="href"><code>href</code></h3>
 <div class="highlight"><pre class="chroma"><code class="language-js" data-lang="js"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">(</span><span class="nx">to</span><span class="p">)</span>
-</code></pre></div><p>Create a relative URL string to use in <code>&lt;a href&gt;</code> attribute.</p>
+</code></pre></div><p>Create a relative url string to use in <code>&lt;a href&gt;</code> attribute.</p>
 <ul>
 <li><code>to</code> object of shape <code>{ pathname, params, query, hash }</code>. The <code>params</code> will be interpolated into the pathname if the pathname contains any parametrised segments. The <code>query</code> is an object that will be passed through <code>qs.stringify</code>.</li>
 </ul>
+<p>Note: <code>to</code> can also be a string, in which case href simply returns the input. This is to align the function signature with that of <code>navigate</code> so the two can be used interchangeably.</p>
 <h3 id="geturl"><code>getUrl</code></h3>
 <div class="highlight"><pre class="chroma"><code class="language-js" data-lang="js"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">getUrl</span><span class="p">()</span>
-</code></pre></div><p>Get the current URL string. Note, this only includes the path and does not not include the protocol and host.</p>
-<p>You shouldn&rsquo;t need to read this most of the time since the updates to URL changes and the matching route will be provided in the <code>listen</code> callback. Be especially careful if you&rsquo;re performing asynchronous logic in your callback, such as lazily importing some modules, where you&rsquo;re then constructing links based on the current url - use route provided to your listener instead of calling <code>getUrl</code> as the URL might already have been updated to another value in the meantime.</p>
+</code></pre></div><p>Get the current url string. Note, this only includes the path and does not not include the protocol and host.</p>
+<p>You shouldn&rsquo;t need to read this most of the time since the updates to url changes and the matching route will be provided in the <code>listen</code> callback. Be especially careful if you&rsquo;re performing asynchronous logic in your callback, such as lazily importing some modules, where you&rsquo;re then constructing links based on the current url - use route provided to your listener instead of calling <code>getUrl</code> as the url might already have been updated to another value in the meantime.</p>
 
     </div>
   </div>

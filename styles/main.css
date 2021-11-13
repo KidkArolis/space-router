@@ -174,7 +174,8 @@ h1 {
   color: rgba(0, 0, 0, 0.5); }
 
 #TOC {
-  padding: 32px; }
+  padding: 32px;
+  margin-top: 24px; }
   @media (min-width: 768px) {
     #TOC {
       color: #1a1a1a;
@@ -196,8 +197,9 @@ h1 {
   margin: 0;
   list-style: none; }
 
-#TOC ul > ul {
-  margin: 0; }
+#TOC ul ul {
+  margin: 0;
+  margin-top: 12px; }
 
 #TOC ul {
   list-style: none;
@@ -223,7 +225,8 @@ h1 {
   text-decoration: underline; }
 
 #TOC > nav > ul > li > a {
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 500;
   margin-top: 12px; }
 
 #main {
