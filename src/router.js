@@ -27,19 +27,11 @@ export function createRouter(options = {}) {
     },
 
     navigate(to) {
-      let url
-      let replace = false
-
       if (typeof to === 'string') {
-        url = to
-      } else if (to.url) {
-        url = to.url
-      } else {
-        url = router.href(to)
+        to = { url: to }
       }
-      replace = !!to.replace
-
-      if (replace) {
+      const url = router.href(to)
+      if (to.replace) {
         history.replace(url)
       } else {
         history.push(url)
@@ -50,6 +42,11 @@ export function createRouter(options = {}) {
       // already a url
       if (typeof to === 'string') {
         return to
+      }
+
+      // align with navigate API
+      if (to.url) {
+        return to.url
       }
 
       if (to.merge) {
@@ -130,7 +127,7 @@ function redirectUrl(router, redirect, matchingRoute) {
   if (typeof redirect === 'function') {
     redirect = redirect(matchingRoute)
   }
-  return redirect.url ? redirect.url : router.href(redirect)
+  return router.href(redirect)
 }
 
 function data(routes, matchingRoute) {

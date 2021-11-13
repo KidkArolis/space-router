@@ -1,3 +1,7 @@
+## 0.8.4
+
+- fix the `navigate(url: string)` implementation where `"".replace` was being tested instead of `to.replace`
+
 ## 0.8.3
 
 - re-introduce `navigate(url: string)` since it's nice and convenient
