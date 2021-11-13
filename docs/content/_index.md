@@ -59,8 +59,8 @@ const routes = [
 // create the router
 const router = createRouter()
 
-// start listening to the URL changes and kick of the initial render
-// based on the current URL
+// start listening to the url changes and kick of the initial render
+// based on the current url
 export const dispose = router.listen(routes, render)
 
 // every time the route changes, do something, e.g. re-render your app
@@ -86,7 +86,7 @@ function render(route) {
 const router = createRouter(options)
 ```
 
-Creates the router object.
+Create the router object.
 
 - `options` object
   - `mode` - one of `history`, `hash`, `memory`, default is `history`
@@ -98,12 +98,12 @@ Creates the router object.
 const dispose = router.listen(routes, onChange)
 ```
 
-Starts listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, the `onChange` callback will get called with the matched `route` object.
+Start listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, the `onChange` callback will get called with the matched `route` object.
 
-Note, calling listen will immediately call `onChange` based on the current URL when in `history` or `hash` modes. This does not happen in `memory` mode so that you could perform the initial navigation yourself since there is no URL to read from in that case.
+Note, calling listen will immediately call `onChange` based on the current url when in `history` or `hash` modes. This does not happen in `memory` mode so that you could perform the initial navigation yourself since there is no url to read from in that case.
 
 - `routes` an array of arrays of route definitions, where each route is an object of shape `{ path, redirect, routes, ...metadata }`
-  - `path` is the URL pattern to match that can include named parameters as segments
+  - `path` is the url pattern to match that can include named parameters as segments
   - `redirect` can be a string or a function that redirects upon entering that route
   - `routes` is a nested object of nested route definitions
   - `...metadata` all other other keys can be chosen by you
@@ -119,20 +119,20 @@ Listen returns a `dispose` function that stops listening to url changes.
 router.navigate(to)
 ```
 
-Navigates to a URL described.
+Navigate to a url. Navigating will update the browser's location bar, depending no the mode the router is in and will call the router listener callback with the newly matched route.
 
-- `to` - navigation target
+- `to` - a `string` url or an `object` with the following properties
   - `url` a relative url string or a route pattern
   - `pathname` the pathname portion of the target url, which can include named segments
   - `params` params to interpolate into the named pathname segments
   - `query` the query object that will be passed through `qs.stringify`
   - `hash` the hash fragment to append to the url of the url
   - `replace` set to true to replace the current entry in the navigation stack instead of pushing
-  - `merge` set to true to merge in the params from the current URL, alternatively set to the current route object to use that as the current route to be used in merging
+  - `merge` set to true to merge in the params from the current url, alternatively set to the current route object to use that as the current route to be used in merging
 
 Note, if `url` option is provided, the `pathname`, `params`, `query` and `hash` will be ignored.
 
-Note, be careful when using `merge` as this reads the location's current URL which might be different from the one you store in your application's state in case you're performing async logic in the listen callback.
+Note, be careful when using `merge` as this reads the location's current url which might be different from the one you store in your application's state in case you're performing async logic in the listen callback.
 
 ### `match`
 
@@ -140,7 +140,7 @@ Note, be careful when using `merge` as this reads the location's current URL whi
 const route = router.match(url)
 ```
 
-Match the url against the routes and return the matching route object. Useful in server side rendering to translate the request URL to a matching route.
+Match the url string against the routes and return the matching route object. Useful in server side rendering to translate the request url to a matching route.
 
 ### `href`
 
@@ -148,9 +148,11 @@ Match the url against the routes and return the matching route object. Useful in
 const url = router.href(to)
 ```
 
-Create a relative URL string to use in `<a href>` attribute.
+Create a relative url string to use in `<a href>` attribute.
 
 - `to` object of shape `{ pathname, params, query, hash }`. The `params` will be interpolated into the pathname if the pathname contains any parametrised segments. The `query` is an object that will be passed through `qs.stringify`.
+
+Note: `to` can also be a string, in which case href simply returns the input. This is to align the function signature with that of `navigate` so the two can be used interchangeably.
 
 ### `getUrl`
 
@@ -158,6 +160,6 @@ Create a relative URL string to use in `<a href>` attribute.
 const url = router.getUrl()
 ```
 
-Get the current URL string. Note, this only includes the path and does not not include the protocol and host.
+Get the current url string. Note, this only includes the path and does not not include the protocol and host.
 
-You shouldn't need to read this most of the time since the updates to URL changes and the matching route will be provided in the `listen` callback. Be especially careful if you're performing asynchronous logic in your callback, such as lazily importing some modules, where you're then constructing links based on the current url - use route provided to your listener instead of calling `getUrl` as the URL might already have been updated to another value in the meantime.
+You shouldn't need to read this most of the time since the updates to url changes and the matching route will be provided in the `listen` callback. Be especially careful if you're performing asynchronous logic in your callback, such as lazily importing some modules, where you're then constructing links based on the current url - use route provided to your listener instead of calling `getUrl` as the url might already have been updated to another value in the meantime.

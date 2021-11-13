@@ -13,8 +13,8 @@ test('createRouter, listen, navigate and dispose', (t) => {
   router.navigate({ url: '/user/7/friends' })
   router.navigate({ url: '/user/7' })
   router.navigate({ url: '/user/8/posts' })
-  router.navigate({ url: '/bar' })
-  router.navigate({ url: '/user/1' })
+  router.navigate('/bar')
+  router.navigate('/user/1')
   router.navigate({ pathname: '/user/:id', params: { id: 2 } })
   router.navigate({ pathname: '/user/2', query: { a: 1, b: 2 } })
   router.navigate({ query: { a: 11, b: 22 }, merge: true })
@@ -107,7 +107,7 @@ test('.match(url) without catch all', (t) => {
 test('.getUrl()', (t) => {
   const { router } = createTestRouter()
 
-  router.navigate({ url: '/user/8' })
+  router.navigate('/user/8')
   t.is(router.getUrl(), '/user/8')
 })
 
@@ -118,10 +118,10 @@ test('redirects', (t) => {
     calls.push(route.data[0].render(route.params, route.query))
   })
 
-  router.navigate({ url: '/redirect-via-obj-1' })
-  router.navigate({ url: '/redirect-via-obj-2' })
-  router.navigate({ url: '/redirect-via-fn-1/2' })
-  router.navigate({ url: '/redirect-via-fn-2/2' })
+  router.navigate('/redirect-via-obj-1')
+  router.navigate('/redirect-via-obj-2')
+  router.navigate('/redirect-via-fn-1/2')
+  router.navigate('/redirect-via-fn-2/2')
 
   t.deepEqual(['bar', 'user=1', 'user=2', 'foo'], calls)
 
@@ -134,7 +134,7 @@ function createTestRouter(cb, { withoutCatchAll = false } = {}) {
     [
       { path: '/foo', render: () => 'foo' },
       { path: '/bar', render: () => 'bar' },
-      { path: '/redirect-via-obj-1', redirect: { url: 'bar' } },
+      { path: '/redirect-via-obj-1', redirect: 'bar' },
       { path: '/redirect-via-obj-2', redirect: { pathname: '/user/:id', params: { id: 1 } } },
       { path: '/redirect-via-fn-1/:id', redirect: ({ params }) => ({ pathname: '/user/:id', params }) },
       { path: '/redirect-via-fn-2/:id', redirect: ({ params }) => ({ url: '/foo' }) },

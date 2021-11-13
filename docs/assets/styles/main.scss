@@ -204,6 +204,7 @@ h1 {
 
 #TOC {
   padding: 32px;
+  margin-top: 24px;
 
   @media (min-width: 768px) {
     color: rgb(26, 26, 26);
@@ -231,8 +232,9 @@ h1 {
   margin: 0;
   list-style: none;
 }
-#TOC ul > ul {
+#TOC ul ul {
   margin: 0;
+  margin-top: 12px;
 }
 #TOC ul {
   list-style: none;
@@ -259,7 +261,8 @@ h1 {
 }
 
 #TOC > nav > ul > li > a {
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 500;
   margin-top: 12px;
 }
 

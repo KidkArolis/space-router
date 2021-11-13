@@ -1,3 +1,7 @@
+## 0.8.3
+
+- re-introduce `navigate(url: string)` since it's nice and convenient
+
 ## 0.8.2
 
 - refer to `setImmediate` via `global.setImmediate` to fix a webpack compilation error

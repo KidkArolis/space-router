@@ -30,7 +30,9 @@ export function createRouter(options = {}) {
       let url
       let replace = false
 
-      if (to.url) {
+      if (typeof to === 'string') {
+        url = to
+      } else if (to.url) {
         url = to.url
       } else {
         url = router.href(to)
@@ -45,6 +47,11 @@ export function createRouter(options = {}) {
     },
 
     href(to) {
+      // already a url
+      if (typeof to === 'string') {
+        return to
+      }
+
       if (to.merge) {
         const curr = to.merge === true ? router.match(router.getUrl()) : to.merge
         to = merge(curr, to)
