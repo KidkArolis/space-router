@@ -1,3 +1,7 @@
+## 0.8.5
+
+- fix redirects - the history was not ready by the time initial transition was kicked off by redirecting
+
 ## 0.8.4
 
 - fix the `navigate(url: string)` implementation where `"".replace` was being tested instead of `to.replace`

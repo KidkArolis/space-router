@@ -26,7 +26,7 @@ export function createHistory(onChange, options) {
   }
 
   if (mode !== 'memory') {
-    onChange(getUrl())
+    raf(onPop)
   }
 
   return {
