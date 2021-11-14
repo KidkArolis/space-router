@@ -107,9 +107,17 @@ Note, calling listen will immediately call `onChange` based on the current url w
   - `redirect` can be a string or a function that redirects upon entering that route
   - `routes` is a nested object of nested route definitions
   - `...metadata` all other other keys can be chosen by you
-- `onChange` is called with `(route)`
-  - `route` is an object of shape `{ pattern, href, pathname, params, query, search, hash }`
-  - `data` is an array of datas associated with this route
+- `onChange` is called with the `route` object
+
+`route` is an object of shape `{ url, pathname, params, query, search, hash, pattern, data }`:
+
+- `url` the full relative url string including query string and hash if any
+- `pathname` the pathname portion of the target url, which can include named segments
+- `params` params to interpolate into the named pathname segments
+- `query` the query object that will be passed through `qs.stringify`
+- `hash` the hash fragment to append to the url of the url
+- `pattern` the matched route pattern as defined in the route config
+- `data` the array of nested matched route objects with any metadata you've put into your routes
 
 Listen returns a `dispose` function that stops listening to url changes.
 
@@ -117,9 +125,17 @@ Listen returns a `dispose` function that stops listening to url changes.
 
 ```js
 router.navigate(to)
+
+// examples
+router.navigate('/shows')
+router.navigate({ url: '/show/1' })
+router.navigate({ url: '/show/2', replace: true })
+router.navigate({ pathname: '/shows', query: { 'most-recent': 1 } })
+router.navigate({ query: { 'top-rated': 1 }, merge: true })
+router.navigate({ query: { 'top-rated': undefined }, merge: true })
 ```
 
-Navigate to a url. Navigating will update the browser's location bar, depending no the mode the router is in and will call the router listener callback with the newly matched route.
+Navigate to a url. Navigating will update the browser's location bar (unless in `memory` mode) and will call the router listener callback with the newly matched route.
 
 - `to` - a `string` url or an `object` with the following properties
   - `url` a relative url string or a route pattern
@@ -140,19 +156,26 @@ Note, be careful when using `merge` as this reads the location's current url whi
 const route = router.match(url)
 ```
 
-Match the url string against the routes and return the matching route object. Useful in server side rendering to translate the request url to a matching route.
+Match the url string against the routes and return the matching route object.
 
 ### `href`
 
 ```js
 const url = router.href(to)
+
+// examples
+router.href('/shows')
+router.href({ url: '/show/1' })
+router.href({ pathname: '/shows', query: { 'most-recent': 1 } })
+router.href({ query: { 'top-rated': 1 }, merge: true })
+router.href({ query: { 'top-rated': undefined }, merge: true })
 ```
 
 Create a relative url string to use in `<a href>` attribute.
 
 - `to` object of shape `{ pathname, params, query, hash }`. The `params` will be interpolated into the pathname if the pathname contains any parametrised segments. The `query` is an object that will be passed through `qs.stringify`.
 
-Note: `to` can also be a string, in which case href simply returns the input. This is to align the function signature with that of `navigate` so the two can be used interchangeably.
+Note: `to` can be a string, in which case `href` simply returns the input. Similarly, the to can contain `{ url }` key in which case `href` returns that url. This is to align the function signature with that of `navigate` so the two can be used interchangeably.
 
 ### `getUrl`
 

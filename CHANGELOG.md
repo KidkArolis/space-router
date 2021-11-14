@@ -1,6 +1,7 @@
 ## 0.8.5
 
 - fix redirects - the history was not ready by the time initial transition was kicked off by redirecting
+- remove the possibility to pass the current route via the `merge` option directly, instead set `merge: true` (truthy value works now), and instead optionally pass the current route as the second argument to `navigate(to, curr)` or `href(to, curr)`, this is a breaking change, but also an undocumented API as it it's still being refined and is used for correctly merging urls during async navigations.
 
 ## 0.8.4
 

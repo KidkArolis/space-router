@@ -16,21 +16,21 @@ export function createRouter(options = {}) {
       }
 
       routes = flatten(routeMap)
-      const onHistoryChange = (url) => transition(router, url, cb)
-      history = createHistory(onHistoryChange, { mode, sync })
+      history = createHistory({ mode, sync })
+      const dispose = history.listen((url) => transition(router, url, cb))
 
       return () => {
-        history.destroy()
+        dispose()
         history = null
         routes = []
       }
     },
 
-    navigate(to) {
+    navigate(to, curr) {
       if (typeof to === 'string') {
         to = { url: to }
       }
-      const url = router.href(to)
+      const url = router.href(to, curr)
       if (to.replace) {
         history.replace(url)
       } else {
@@ -38,7 +38,7 @@ export function createRouter(options = {}) {
       }
     },
 
-    href(to) {
+    href(to, curr) {
       // already a url
       if (typeof to === 'string') {
         return to
@@ -50,7 +50,7 @@ export function createRouter(options = {}) {
       }
 
       if (to.merge) {
-        const curr = to.merge === true ? router.match(router.getUrl()) : to.merge
+        curr = curr || router.match(router.getUrl())
         to = merge(curr, to)
       }
 
@@ -139,7 +139,7 @@ function data(routes, matchingRoute) {
 }
 
 export function merge(curr = {}, to) {
-  const pathname = to.pathname || curr.pattern
+  const pathname = to.pathname || curr.pattern || curr.pathname
   const params = Object.assign({}, curr.params, to.params)
   const query = to.query === null ? null : Object.assign({}, curr.query, to.query)
   const hash = to.hash === null ? null : to.hash || curr.hash || ''

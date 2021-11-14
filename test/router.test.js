@@ -20,6 +20,7 @@ test('createRouter, listen, navigate and dispose', (t) => {
   router.navigate({ query: { a: 11, b: 22 }, merge: true })
   router.navigate({ query: { b: undefined, c: 'bla' }, hash: 'test', merge: true })
   router.navigate({ params: { id: 3 }, merge: true })
+  router.navigate({ query: { curr: 'test' }, merge: true }, { pathname: '/user/curr' })
 
   t.deepEqual(
     [
@@ -35,6 +36,7 @@ test('createRouter, listen, navigate and dispose', (t) => {
       'user=2?a=11&b=22',
       'user=2?a=11&c=bla#test',
       'user=3?a=11&c=bla#test',
+      'user=curr?curr=test',
     ],
     calls
   )
@@ -42,7 +44,7 @@ test('createRouter, listen, navigate and dispose', (t) => {
   dispose()
 })
 
-test('.href(options)', (t) => {
+test('.href(to)', (t) => {
   const { router, dispose } = createTestRouter()
 
   t.deepEqual('/user/7/friends?a=1&b=2', router.href({ pathname: '/user/7/friends', query: { a: 1, b: 2 } }))

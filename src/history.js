@@ -1,7 +1,8 @@
-export function createHistory(onChange, options) {
+export function createHistory(options) {
   const sync = options.sync
   let mode = options.mode
   let raf
+  let onPop
 
   const memory = []
   let off
@@ -17,29 +18,28 @@ export function createHistory(onChange, options) {
     }
   }
 
-  if (mode !== 'memory') {
-    off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onPop)
-  }
+  function listen(onChange) {
+    onPop = () => onChange(getUrl())
 
-  function onPop() {
-    onChange(getUrl())
-  }
+    if (mode !== 'memory') {
+      off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onPop)
+      raf(onPop)
+    }
 
-  if (mode !== 'memory') {
-    raf(onPop)
+    return () => {
+      destroyed = true
+      off && off()
+    }
   }
 
   return {
+    listen,
     getUrl,
     push(url) {
       go(url)
     },
     replace(url) {
       go(url, true)
-    },
-    destroy() {
-      destroyed = true
-      off && off()
     },
   }
 
