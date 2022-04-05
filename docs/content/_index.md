@@ -111,13 +111,14 @@ Note, calling listen will immediately call `onChange` based on the current url w
 
 `route` is an object of shape `{ url, pathname, params, query, search, hash, pattern, data }`:
 
-- `url` the full relative url string including query string and hash if any
+- `url` full relative url string including query string and hash if any
 - `pathname` the pathname portion of the target url, which can include named segments
-- `params` params to interpolate into the named pathname segments
-- `query` the query object that will be passed through `qs.stringify`
-- `hash` the hash fragment to append to the url of the url
+- `params` params extracted from the named pathname segments
+- `query` query object that was parsed with `qs.parse`
+- `search` full unparsed query string
+- `hash` hash fragment
 - `pattern` the matched route pattern as defined in the route config
-- `data` the array of nested matched route objects with any metadata you've put into your routes
+- `data` an array of nested matched route objects with any metadata found in the route config
 
 Listen returns a `dispose` function that stops listening to url changes.
 
