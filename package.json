@@ -22,12 +22,11 @@
   ],
   "author": "Karolis Narkevicius",
   "scripts": {
-    "test": "healthier && prettier --check '**/*.{js,css,yml}' && c8 ava",
+    "test": "npm run build && healthier && prettier --check '**/*.{js,css,yml}' && c8 ava",
     "format": "prettier --write '**/*.{js,css,yml}'",
     "coverage": "c8 --reporter=html ava",
     "build": "node ./tasks/build.js",
     "watch": "node ./tasks/build.js -w",
-    "version": "npm run build",
     "release": "np --no-release-draft",
     "release:beta": "np --tag=beta --no-release-draft",
     "release:docs": "hugo -s docs && gh-pages -d docs/public"
