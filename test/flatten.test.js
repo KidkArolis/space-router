@@ -1,5 +1,5 @@
 import test from 'ava'
-import { flatten } from '../src/router'
+import { flatten } from '../src/router.js'
 
 test('converts array of routes to array of internal route descriptors', (t) => {
   t.deepEqual(

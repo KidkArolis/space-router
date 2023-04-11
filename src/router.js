@@ -1,6 +1,6 @@
-import { match as findMatch } from './match'
-import { createHistory } from './history'
-import { qs as defaultQs } from './qs'
+import { match as findMatch } from './match.js'
+import { createHistory } from './history.js'
+import { qs as defaultQs } from './qs.js'
 
 export function createRouter(options = {}) {
   let history = null

@@ -1,0 +1,11 @@
+{
+  "module": {
+    "type": "commonjs"
+  },
+  "env": {
+    "targets": [
+      "last 2 versions",
+      "IE >= 9"
+    ]
+  }
+}

@@ -1,3 +1,8 @@
+## 0.9.0
+
+- Upgrade all dependencies.
+- Switch from babel to swc for dist compilation.
+
 ## 0.8.5
 
 - fix redirects - the history was not ready by the time initial transition was kicked off by redirecting

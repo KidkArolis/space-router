@@ -1,6 +1,6 @@
 import test from 'ava'
-import { qs } from '../src'
-import { matchOne as match } from '../src/match'
+import { qs } from '../src/index.js'
+import { matchOne as match } from '../src/match.js'
 
 test('match explicit equality', (t) => {
   t.deepEqual(match('/', '/').params, {})
