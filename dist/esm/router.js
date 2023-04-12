@@ -77,9 +77,9 @@ function _object_without_properties_loose(source, excluded) {
     }
     return target;
 }
-import { match as findMatch } from "./match.js";
-import { createHistory } from "./history.js";
-import { qs as defaultQs } from "./qs.js";
+import { match as findMatch } from "./match";
+import { createHistory } from "./history";
+import { qs as defaultQs } from "./qs";
 export function createRouter() {
     var options = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
     var history = null;

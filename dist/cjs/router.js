@@ -19,9 +19,9 @@ _export(exports, {
         return merge;
     }
 });
-var _match = require("./match.js");
-var _history = require("./history.js");
-var _qs = require("./qs.js");
+var _match = require("./match");
+var _history = require("./history");
+var _qs = require("./qs");
 function _define_property(obj, key, value) {
     if (key in obj) {
         Object.defineProperty(obj, key, {

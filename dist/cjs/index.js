@@ -22,6 +22,6 @@ _export(exports, {
         return _qs.qs;
     }
 });
-var _router = require("./router.js");
-var _history = require("./history.js");
-var _qs = require("./qs.js");
+var _router = require("./router");
+var _history = require("./history");
+var _qs = require("./qs");
