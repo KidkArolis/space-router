@@ -38,7 +38,7 @@ test('createRouter, listen, navigate and dispose', (t) => {
       'user=3?a=11&c=bla#test',
       'user=curr?curr=test',
     ],
-    calls
+    calls,
   )
 
   dispose()
@@ -51,28 +51,28 @@ test('.href(to)', (t) => {
 
   t.deepEqual(
     router.href({ pathname: '/user/:id/friends', params: { id: 7 }, query: { a: 1, b: 2 } }),
-    '/user/7/friends?a=1&b=2'
+    '/user/7/friends?a=1&b=2',
   )
   t.deepEqual(
     router.href({ pathname: '/user/:id/friends', params: { id: 7 }, query: { a: 1, b: 2 }, hash: '#bla' }),
-    '/user/7/friends?a=1&b=2#bla'
+    '/user/7/friends?a=1&b=2#bla',
   )
   t.deepEqual(router.href({ pathname: '/user/:id/friends', params: { id: 8 }, hash: '#foo' }), '/user/8/friends#foo')
   t.deepEqual(
     router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: {}, hash: '#foo' }),
-    '/user/8/friends#foo'
+    '/user/8/friends#foo',
   )
   t.deepEqual(
     router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: null }, hash: '#foo' }),
-    '/user/8/friends?q=null#foo'
+    '/user/8/friends?q=null#foo',
   )
   t.deepEqual(
     router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: undefined }, hash: '#foo' }),
-    '/user/8/friends#foo'
+    '/user/8/friends#foo',
   )
   t.deepEqual(
     router.href({ pathname: '/user/:id/friends', params: { id: 8 }, query: { q: undefined }, hash: '#foo' }),
-    '/user/8/friends#foo'
+    '/user/8/friends#foo',
   )
   t.deepEqual(router.href({ params: { id: 8 }, query: { q: 1 }, hash: '#foo' }), '/?q=1#foo')
 
@@ -151,7 +151,7 @@ function createTestRouter(cb, { withoutCatchAll = false } = {}) {
       { path: '/user/:id/settings', datum: 'settings-data' },
       !withoutCatchAll && { path: '*', render: () => 'catchall' },
     ].filter(Boolean),
-    cb
+    cb,
   )
   return { router, dispose }
 }

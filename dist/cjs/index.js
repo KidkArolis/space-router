@@ -9,14 +9,14 @@ function _export(target, all) {
     });
 }
 _export(exports, {
+    createHistory: function() {
+        return _history.createHistory;
+    },
     createRouter: function() {
         return _router.createRouter;
     },
     merge: function() {
         return _router.merge;
-    },
-    createHistory: function() {
-        return _history.createHistory;
     },
     qs: function() {
         return _qs.qs;

@@ -1,3 +1,7 @@
+## 0.9.2
+
+- Upgrade all depedencies.
+
 ## 0.9.1
 
 - Revert to commonjs (remove `type: "module"`) to keep support for cjs in node and esm in browsers.

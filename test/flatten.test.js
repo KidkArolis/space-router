@@ -10,7 +10,7 @@ test('converts array of routes to array of internal route descriptors', (t) => {
     [
       { pattern: '/foo', data: [{ a: 'foo' }] },
       { pattern: '/bar', data: [{ a: 'bar' }] },
-    ]
+    ],
   )
 })
 
@@ -49,7 +49,7 @@ test('handles nested routes', (t) => {
       { pattern: '/foo/bar', data: [{ component: 'root' }, { component: 'foo' }, { component: 'bar' }] },
       { pattern: '/second', data: [{ component: 'second-root' }] },
       { pattern: '/baz/*', data: [{ component: 'second-root' }, { component: 'baz' }] },
-    ]
+    ],
   )
 })
 
