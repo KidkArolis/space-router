@@ -9,16 +9,10 @@
     "type": "git",
     "url": "git://github.com/KidkArolis/space-router.git"
   },
-  "keywords": [
-    "browser",
-    "router",
-    "small",
-    "clientside",
-    "universal",
-    "history",
-    "location",
-    "url"
-  ],
+  "keywords": ["browser", "router", "small", "clientside", "universal", "history", "location", "url"],
+  "engines": {
+    "node": ">=14"
+  },
   "author": "Karolis Narkevicius",
   "scripts": {
     "test": "npm run build && healthier && prettier --check '**/*.{js,css,yml}' && c8 ava",
@@ -42,19 +36,10 @@
     "prettier": "^3.0.3"
   },
   "healthier": {
-    "global": [
-      "location",
-      "history",
-      "requestAnimationFrame"
-    ],
-    "ignore": [
-      "docs/static/js",
-      "docs/assets/js"
-    ]
+    "global": ["location", "history", "requestAnimationFrame"],
+    "ignore": ["docs/static/js", "docs/assets/js"]
   },
   "ava": {
-    "require": [
-      "@swc-node/register"
-    ]
+    "require": ["@swc-node/register"]
   }
 }
