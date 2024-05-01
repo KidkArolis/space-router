@@ -11,6 +11,6 @@ const path = require('path')
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json')))
 
   const swc = './node_modules/.bin/swc'
-  await sh(`${swc} --no-swcrc src -d ${pkg.main} --config-file=./.swc-cjs`)
-  await sh(`${swc} --no-swcrc src -d ${pkg.module} --config-file=./.swc-esm`)
+  await sh(`${swc} --no-swcrc src -d ${pkg.main} --strip-leading-paths --config-file=./.swc-cjs`)
+  await sh(`${swc} --no-swcrc src -d ${pkg.module} --strip-leading-paths --config-file=./.swc-esm`)
 })()

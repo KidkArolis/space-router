@@ -77,20 +77,20 @@ function _object_without_properties_loose(source, excluded) {
     }
     return target;
 }
-import { match as findMatch } from "./match";
-import { createHistory } from "./history";
-import { qs as defaultQs } from "./qs";
+import { match as findMatch } from './match';
+import { createHistory } from './history';
+import { qs as defaultQs } from './qs';
 export function createRouter() {
     var options = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
     var history = null;
     var routes = [];
-    var mode = options.mode || "history";
+    var mode = options.mode || 'history';
     var qs = options.qs || defaultQs;
     var sync = options.sync || false;
     var router = {
         listen: function listen(routeMap, cb) {
             if (history) {
-                throw new Error("Already listening");
+                throw new Error('Already listening');
             }
             routes = flatten(routeMap);
             history = createHistory({
@@ -107,7 +107,7 @@ export function createRouter() {
             };
         },
         navigate: function navigate(to, curr) {
-            if (typeof to === "string") {
+            if (typeof to === 'string') {
                 to = {
                     url: to
                 };
@@ -121,7 +121,7 @@ export function createRouter() {
         },
         href: function href(to, curr) {
             // already a url
-            if (typeof to === "string") {
+            if (typeof to === 'string') {
                 return to;
             }
             // align with navigate API
@@ -132,20 +132,20 @@ export function createRouter() {
                 curr = curr || router.match(router.getUrl());
                 to = merge(curr, to);
             }
-            var url = to.pathname || "/";
+            var url = to.pathname || '/';
             if (to.params) {
                 Object.keys(to.params).forEach(function(param) {
-                    url = url.replace(":" + param, to.params[param]);
+                    url = url.replace(':' + param, to.params[param]);
                 });
             }
             if (to.query && Object.keys(to.query).length) {
                 var query = qs.stringify(to.query);
                 if (query) {
-                    url = url + "?" + query;
+                    url = url + '?' + query;
                 }
             }
             if (to.hash) {
-                var prefix = to.hash.startsWith("#") ? "" : "#";
+                var prefix = to.hash.startsWith('#') ? '' : '#';
                 url = url + prefix + to.hash;
             }
             return url;
@@ -169,7 +169,7 @@ export function flatten(routeMap) {
     var parentData = [];
     function addLevel(level) {
         level.forEach(function(route) {
-            var _route_path = route.path, path = _route_path === void 0 ? "" : _route_path, children = route.routes, routeData = _object_without_properties(route, [
+            var _route_path = route.path, path = _route_path === void 0 ? '' : _route_path, children = route.routes, routeData = _object_without_properties(route, [
                 "path",
                 "routes"
             ]);
@@ -222,7 +222,7 @@ function transition(router, url, onNavigated) {
     }
 }
 function redirectUrl(router, redirect, matchingRoute) {
-    if (typeof redirect === "function") {
+    if (typeof redirect === 'function') {
         redirect = redirect(matchingRoute);
     }
     return router.href(redirect);
@@ -239,7 +239,7 @@ export function merge() {
     var pathname = to.pathname || curr.pattern || curr.pathname;
     var params = Object.assign({}, curr.params, to.params);
     var query = to.query === null ? null : Object.assign({}, curr.query, to.query);
-    var hash = to.hash === null ? null : to.hash || curr.hash || "";
+    var hash = to.hash === null ? null : to.hash || curr.hash || '';
     return {
         pathname: pathname,
         params: params,
