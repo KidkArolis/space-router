@@ -1,3 +1,7 @@
+## 0.9.3
+
+- Upgrade all depedencies.
+
 ## 0.9.2
 
 - Upgrade all depedencies.
