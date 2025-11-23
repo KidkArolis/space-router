@@ -5,17 +5,17 @@ Object.defineProperty(exports, "__esModule", {
 function _export(target, all) {
     for(var name in all)Object.defineProperty(target, name, {
         enumerable: true,
-        get: all[name]
+        get: Object.getOwnPropertyDescriptor(all, name).get
     });
 }
 _export(exports, {
-    createRouter: function() {
+    get createRouter () {
         return createRouter;
     },
-    flatten: function() {
+    get flatten () {
         return flatten;
     },
-    merge: function() {
+    get merge () {
         return merge;
     }
 });
@@ -109,7 +109,7 @@ function createRouter() {
     var qs = options.qs || _qs.qs;
     var sync = options.sync || false;
     var router = {
-        listen: function(routeMap, cb) {
+        listen: function listen(routeMap, cb) {
             if (history) {
                 throw new Error('Already listening');
             }
@@ -127,7 +127,7 @@ function createRouter() {
                 routes = [];
             };
         },
-        navigate: function(to, curr) {
+        navigate: function navigate(to, curr) {
             if (typeof to === 'string') {
                 to = {
                     url: to
@@ -140,7 +140,7 @@ function createRouter() {
                 history.push(url);
             }
         },
-        href: function(to, curr) {
+        href: function href(to, curr) {
             // already a url
             if (typeof to === 'string') {
                 return to;
@@ -171,7 +171,7 @@ function createRouter() {
             }
             return url;
         },
-        match: function(url) {
+        match: function match(url) {
             var route = (0, _match.match)(routes, url, qs);
             if (route) {
                 return _object_spread_props(_object_spread({}, route), {
@@ -179,7 +179,7 @@ function createRouter() {
                 });
             }
         },
-        getUrl: function() {
+        getUrl: function getUrl() {
             return history.getUrl();
         }
     };

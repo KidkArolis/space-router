@@ -45,10 +45,10 @@ function createHistory(options) {
     return {
         listen: listen,
         getUrl: getUrl,
-        push: function(url) {
+        push: function push(url) {
             go(url);
         },
-        replace: function(url) {
+        replace: function replace(url) {
             go(url, true);
         }
     };

@@ -5,20 +5,20 @@ Object.defineProperty(exports, "__esModule", {
 function _export(target, all) {
     for(var name in all)Object.defineProperty(target, name, {
         enumerable: true,
-        get: all[name]
+        get: Object.getOwnPropertyDescriptor(all, name).get
     });
 }
 _export(exports, {
-    createHistory: function() {
+    get createHistory () {
         return _history.createHistory;
     },
-    createRouter: function() {
+    get createRouter () {
         return _router.createRouter;
     },
-    merge: function() {
+    get merge () {
         return _router.merge;
     },
-    qs: function() {
+    get qs () {
         return _qs.qs;
     }
 });
