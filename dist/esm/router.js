@@ -52,12 +52,22 @@ function _object_spread_props(target, source) {
 }
 function _object_without_properties(source, excluded) {
     if (source == null) return {};
-    var target = _object_without_properties_loose(source, excluded);
-    var key, i;
+    var target = {}, sourceKeys, key, i;
+    if (typeof Reflect !== "undefined" && Reflect.ownKeys) {
+        sourceKeys = Reflect.ownKeys(source);
+        for(i = 0; i < sourceKeys.length; i++){
+            key = sourceKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+        }
+        return target;
+    }
+    target = _object_without_properties_loose(source, excluded);
     if (Object.getOwnPropertySymbols) {
-        var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
-        for(i = 0; i < sourceSymbolKeys.length; i++){
-            key = sourceSymbolKeys[i];
+        sourceKeys = Object.getOwnPropertySymbols(source);
+        for(i = 0; i < sourceKeys.length; i++){
+            key = sourceKeys[i];
             if (excluded.indexOf(key) >= 0) continue;
             if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
             target[key] = source[key];
@@ -67,12 +77,11 @@ function _object_without_properties(source, excluded) {
 }
 function _object_without_properties_loose(source, excluded) {
     if (source == null) return {};
-    var target = {};
-    var sourceKeys = Object.keys(source);
-    var key, i;
+    var target = {}, sourceKeys = Object.getOwnPropertyNames(source), key, i;
     for(i = 0; i < sourceKeys.length; i++){
         key = sourceKeys[i];
         if (excluded.indexOf(key) >= 0) continue;
+        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
         target[key] = source[key];
     }
     return target;
