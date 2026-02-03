@@ -20,7 +20,7 @@ export function createHistory(options) {
         }
     }
     function listen(onChange) {
-        onPop = function() {
+        onPop = function onPop() {
             return onChange(getUrl());
         };
         if (mode !== 'memory') {
