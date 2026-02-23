@@ -139,7 +139,7 @@ function createTestRouter(cb, { withoutCatchAll = false } = {}) {
       { path: '/redirect-via-obj-1', redirect: 'bar' },
       { path: '/redirect-via-obj-2', redirect: { pathname: '/user/:id', params: { id: 1 } } },
       { path: '/redirect-via-fn-1/:id', redirect: ({ params }) => ({ pathname: '/user/:id', params }) },
-      { path: '/redirect-via-fn-2/:id', redirect: ({ params }) => ({ url: '/foo' }) },
+      { path: '/redirect-via-fn-2/:id', redirect: () => ({ url: '/foo' }) },
       {
         path: '/user/:id',
         render: (params, query, hash = '') => {

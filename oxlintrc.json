@@ -1,0 +1,6 @@
+{
+  "env": {
+    "browser": true
+  },
+  "ignorePatterns": ["dist", "docs/static/js", "docs/assets/js"]
+}
