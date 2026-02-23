@@ -248,7 +248,7 @@ function transition(router, url, onNavigated) {
                 }
             }
         }
-        onNavigated && onNavigated(route);
+        if (onNavigated) onNavigated(route);
     }
 }
 function redirectUrl(router, redirect, matchingRoute) {

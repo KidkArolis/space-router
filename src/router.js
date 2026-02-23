@@ -119,7 +119,7 @@ function transition(router, url, onNavigated) {
         return router.navigate({ url, replace: true })
       }
     }
-    onNavigated && onNavigated(route)
+    if (onNavigated) onNavigated(route)
   }
 }
 

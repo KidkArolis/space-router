@@ -28,7 +28,7 @@ export function createHistory(options) {
 
     return () => {
       destroyed = true
-      off && off()
+      if (off) off()
     }
   }
 
@@ -52,7 +52,11 @@ export function createHistory(options) {
     } else if (mode === 'hash') {
       location[replace ? 'replace' : 'assign']('#' + url)
     } else if (mode === 'memory') {
-      replace ? (memory[memory.length - 1] = url) : memory.push(url)
+      if (replace) {
+        memory[memory.length - 1] = url
+      } else {
+        memory.push(url)
+      }
       raf(onPop)
     }
   }
