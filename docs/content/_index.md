@@ -8,7 +8,7 @@ toc: true
 
 > Framework agnostic router for single page apps
 
-Space Router packs all the features you need to keep your app in sync with the url. It's distinct from many other routers in that there is only **a single callback**. This callback can be used to re-render your applocation, update a store and perform other actions on each url change. Space Router is **stateless**, it doesn't store the current route leaving state completely up to you to handle.
+Space Router packs all the features you need to keep your app in sync with the url. It's distinct from many other routers in that there is only **a single callback**. This callback can be used to re-render your application, update a store and perform other actions on each url change. Space Router is **stateless**, it doesn't store the current route leaving state completely up to you to handle.
 
 In summary, Space Router:
 
@@ -16,6 +16,7 @@ In summary, Space Router:
 - extracts url parameters and parses query strings
 - supports nested routes and arbitrary route metadata
 - fits into a wide range of application architectures and frameworks
+- ships TypeScript types
 - has no dependencies and weighs less than 2kb
 
 ## Why?
@@ -102,11 +103,11 @@ Start listening to url changes. Every time the url changes via back/forward butt
 
 Note, calling listen will immediately call `onChange` based on the current url when in `history` or `hash` modes. This does not happen in `memory` mode so that you could perform the initial navigation yourself since there is no url to read from in that case.
 
-- `routes` an array of arrays of route definitions, where each route is an object of shape `{ path, redirect, routes, ...metadata }`
-  - `path` is the url pattern to match that can include named parameters as segments
-  - `redirect` can be a string or a function that redirects upon entering that route
-  - `routes` is a nested object of nested route definitions
-  - `...metadata` all other other keys can be chosen by you
+- `routes` an array of route definitions, where each route is an object of shape `{ path, redirect, routes, ...metadata }`
+  - `path` is the url pattern to match that can include named parameters as segments — see [Patterns](#patterns)
+  - `redirect` can be a string, a `to` object, or a function `(route) => to` that redirects upon entering that route. Cyclic redirects are capped (an error is thrown after 10 hops)
+  - `routes` is a nested array of nested route definitions
+  - `...metadata` any other keys can be chosen by you
 - `onChange` is called with the `route` object
 
 `route` is an object of shape `{ url, pathname, params, query, search, hash, pattern, data }`:
@@ -122,10 +123,23 @@ Note, calling listen will immediately call `onChange` based on the current url w
 
 Listen returns a `dispose` function that stops listening to url changes.
 
+### Patterns
+
+Route `path` patterns support named segments and a few flag suffixes:
+
+- `:name` — a required segment. `/user/:id` matches `/user/7` with `params: { id: '7' }`.
+- `:name?` — an optional segment. `/user/:id?` matches both `/user` and `/user/7`.
+- `:name+` — one or more segments, joined with `/`. `/files/:path+` matches `/files/a/b/c` with `params: { path: 'a/b/c' }`.
+- `:name*` — zero or more segments, joined with `/`. `/files/:path*` matches `/files` and `/files/a/b`.
+- `*` — catch-all, used as a whole pattern (typically as the last route to render a NotFound page).
+
+Param values in matched URLs are decoded with `decodeURIComponent`. When you build URLs with `navigate` or `href`, params are encoded for you, so values containing `/`, spaces, or other special characters round-trip safely.
+
 ### `navigate`
 
 ```js
 router.navigate(to)
+router.navigate(to, curr)
 
 // examples
 router.navigate('/shows')
@@ -142,14 +156,15 @@ Navigate to a url. Navigating will update the browser's location bar (unless in 
   - `url` a relative url string or a route pattern
   - `pathname` the pathname portion of the target url, which can include named segments
   - `params` params to interpolate into the named pathname segments
-  - `query` the query object that will be passed through `qs.stringify`
-  - `hash` the hash fragment to append to the url of the url
+  - `query` the query object that will be passed through `qs.stringify`. Set to `null` (with `merge`) to clear all query params
+  - `hash` the hash fragment to append to the url. Set to `null` (with `merge`) to clear the hash
   - `replace` set to true to replace the current entry in the navigation stack instead of pushing
-  - `merge` set to true to merge in the params from the current url, alternatively set to the current route object to use that as the current route to be used in merging
+  - `merge` set to true to merge in the params, query and hash from the current url
+- `curr` - optional current route object to merge against, instead of reading the current url. Useful in async callbacks where the current url may have moved on by the time you navigate
 
 Note, if `url` option is provided, the `pathname`, `params`, `query` and `hash` will be ignored.
 
-Note, be careful when using `merge` as this reads the location's current url which might be different from the one you store in your application's state in case you're performing async logic in the listen callback.
+Note, be careful when using `merge` without passing `curr` — it reads the location's current url, which might differ from the one you store in your application's state if you're performing async logic in the listen callback.
 
 ### `match`
 
@@ -163,6 +178,7 @@ Match the url string against the routes and return the matching route object.
 
 ```js
 const url = router.href(to)
+const url = router.href(to, curr)
 
 // examples
 router.href('/shows')
@@ -172,11 +188,12 @@ router.href({ query: { 'top-rated': 1 }, merge: true })
 router.href({ query: { 'top-rated': undefined }, merge: true })
 ```
 
-Create a relative url string to use in `<a href>` attribute.
+Create a relative url string to use in `<a href>` attribute. Param values are URL-encoded so the resulting string round-trips through `match`.
 
 - `to` object of shape `{ pathname, params, query, hash }`. The `params` will be interpolated into the pathname if the pathname contains any parametrised segments. The `query` is an object that will be passed through `qs.stringify`.
+- `curr` - optional current route to merge against when `to.merge` is set, mirroring `navigate(to, curr)`.
 
-Note: `to` can be a string, in which case `href` simply returns the input. Similarly, the to can contain `{ url }` key in which case `href` returns that url. This is to align the function signature with that of `navigate` so the two can be used interchangeably.
+Note: `to` can be a string, in which case `href` simply returns the input. Similarly, the `to` can contain a `{ url }` key in which case `href` returns that url. This is to align the function signature with that of `navigate` so the two can be used interchangeably.
 
 ### `getUrl`
 
@@ -184,6 +201,6 @@ Note: `to` can be a string, in which case `href` simply returns the input. Simil
 const url = router.getUrl()
 ```
 
-Get the current url string. Note, this only includes the path and does not not include the protocol and host.
+Get the current url string. Note, this only includes the path and does not include the protocol and host.
 
 You shouldn't need to read this most of the time since the updates to url changes and the matching route will be provided in the `listen` callback. Be especially careful if you're performing asynchronous logic in your callback, such as lazily importing some modules, where you're then constructing links based on the current url - use route provided to your listener instead of calling `getUrl` as the url might already have been updated to another value in the meantime.

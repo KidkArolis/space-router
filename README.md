@@ -14,6 +14,7 @@ In summary, Space Router:
 - extracts url parameters and parses query strings
 - supports nested routes and arbitrary route metadata
 - fits into a wide range of application architectures and frameworks
+- ships TypeScript types
 - has no dependencies and weighs less than 2kb
 
 ## Install
