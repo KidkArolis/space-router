@@ -44,7 +44,13 @@ export function createHistory(options = {}) {
             schedule();
         }
         else if (mode === 'hash') {
+            // hashchange only fires when the URL actually changes; if it doesn't,
+            // we schedule the emit manually so navigation stays consistent with
+            // history mode (where pushState is silent and we always schedule).
+            const same = url === getUrl();
             location[replace ? 'replace' : 'assign']('#' + url);
+            if (same)
+                schedule();
         }
         else if (mode === 'memory') {
             if (replace) {
