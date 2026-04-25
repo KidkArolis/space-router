@@ -4,7 +4,8 @@
     <title>Tags on Space Router</title>
     <link>https://kidkarolis.github.io/space-router/tags/</link>
     <description>Recent content in Tags on Space Router</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language><atom:link href="https://kidkarolis.github.io/space-router/tags/index.xml" rel="self" type="application/rss+xml" />
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://kidkarolis.github.io/space-router/tags/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
