@@ -4,6 +4,7 @@
   "version": "0.9.5",
   "main": "dist/cjs",
   "module": "dist/esm",
+  "types": "./index.d.ts",
   "license": "ICS",
   "repository": {
     "type": "git",
