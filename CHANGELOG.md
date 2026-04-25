@@ -1,3 +1,19 @@
+## 1.0.0
+
+A TypeScript rewrite, ESM-only output, and a batch of correctness fixes.
+
+- source migrated to TypeScript; type declarations ship with the package, with a generic `Data` parameter on `Route`, `Router` and `RouteDefinition`.
+- ESM only. The cjs output is dropped and `node >= 18` is required.
+- fix `href`: encode param values, strip flag suffixes (`?`, `+`, `*`), and handle params whose names share a prefix. URLs now round-trip through `match` for values containing `/`, spaces, or other special characters.
+- fix `qs.parse`: decode keys, preserve `=` in values, treat `+` as space. `qs.stringify` encodes keys.
+- cap redirect chains at 10 hops with a clear error instead of a stack overflow.
+- `getUrl` and `navigate` are safe to call before `listen` and after dispose.
+- hash mode now fires the listener when navigating to the current URL, matching history mode.
+- internal scheduling moved to `queueMicrotask` with coalescing — rapid navigations collapse to a single emit and listeners fire regardless of tab visibility.
+- `matchOne` returns `undefined` instead of `false` when there's no match (only relevant if you import it directly).
+- `getHash` no longer strips `#` characters from inside the hash fragment.
+- drop the IE9-era `pushState` feature detect.
+
 ## 0.9.5
 
 - Upgrade all depedencies.
