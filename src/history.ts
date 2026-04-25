@@ -13,22 +13,29 @@ export interface CreateHistoryOptions {
 }
 
 export function createHistory(options: CreateHistoryOptions = {}): History {
-  const sync = options.sync
+  const sync = !!options.sync
   let mode: Mode = options.mode || 'history'
-  let raf: (cb: () => void) => void
   let listener: ((url: string) => void) | null = null
+  let pending = false
 
   const memory: string[] = []
 
   if (typeof window === 'undefined') {
     mode = 'memory'
-    raf = sync ? (cb) => cb() : queueMicrotask
-  } else {
-    raf = sync ? (cb) => cb() : requestAnimationFrame
   }
 
   function emit() {
     if (listener) listener(getUrl())
+  }
+
+  function schedule() {
+    if (sync) return emit()
+    if (pending) return
+    pending = true
+    queueMicrotask(() => {
+      pending = false
+      emit()
+    })
   }
 
   function listen(onChange: (url: string) => void) {
@@ -36,8 +43,8 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
     listener = onChange
     let off: (() => void) | undefined
     if (mode !== 'memory') {
-      off = on(window, mode === 'history' ? 'popstate' : 'hashchange', emit)
-      raf(emit)
+      off = on(window, mode === 'history' ? 'popstate' : 'hashchange', schedule)
+      schedule()
     }
     return () => {
       listener = null
@@ -49,7 +56,7 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
     url = url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/'
     if (mode === 'history') {
       history[replace ? 'replaceState' : 'pushState']({}, '', url)
-      raf(emit)
+      schedule()
     } else if (mode === 'hash') {
       location[replace ? 'replace' : 'assign']('#' + url)
     } else if (mode === 'memory') {
@@ -58,7 +65,7 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
       } else {
         memory.push(url)
       }
-      raf(emit)
+      schedule()
     }
   }
 

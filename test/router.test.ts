@@ -187,6 +187,22 @@ test('getUrl after dispose does not throw', (t) => {
   t.is(router.getUrl(), '/foo')
 })
 
+test('coalesces rapid async navigations into a single emit', async (t) => {
+  const calls: string[] = []
+  const router = createRouter({ mode: 'memory' })
+  router.listen([{ path: '*' }], (route) => {
+    calls.push(route.url)
+  })
+
+  router.navigate('/a')
+  router.navigate('/b')
+  router.navigate('/c')
+
+  await Promise.resolve()
+
+  t.deepEqual(calls, ['/c'])
+})
+
 function createTestRouter(cb, { withoutCatchAll = false } = {}) {
   const router = createRouter({ mode: 'memory', sync: true })
   const dispose = router.listen(
