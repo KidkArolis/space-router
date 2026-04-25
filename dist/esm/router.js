@@ -89,31 +89,61 @@ function _object_without_properties_loose(source, excluded) {
 import { match as findMatch } from './match';
 import { createHistory } from './history';
 import { qs as defaultQs } from './qs';
+var PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g;
+var MAX_REDIRECTS = 10;
 export function createRouter() {
     var options = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
-    var history = null;
-    var routes = [];
     var mode = options.mode || 'history';
     var qs = options.qs || defaultQs;
     var sync = options.sync || false;
+    var history = createHistory({
+        mode: mode,
+        sync: sync
+    });
+    var routes = [];
     var router = {
         listen: function listen(routeMap, cb) {
-            if (history) {
-                throw new Error('Already listening');
-            }
             routes = flatten(routeMap);
-            history = createHistory({
-                mode: mode,
-                sync: sync
+            var redirects = 0;
+            return history.listen(function(url) {
+                var route = router.match(url);
+                if (!route) {
+                    redirects = 0;
+                    return;
+                }
+                var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
+                try {
+                    for(var _iterator = route.data[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
+                        var r = _step.value;
+                        if (r.redirect) {
+                            if (++redirects > MAX_REDIRECTS) {
+                                redirects = 0;
+                                throw new Error('space-router: too many redirects');
+                            }
+                            var target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect;
+                            return router.navigate({
+                                url: router.href(target),
+                                replace: true
+                            });
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally{
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return != null) {
+                            _iterator.return();
+                        }
+                    } finally{
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
+                    }
+                }
+                redirects = 0;
+                if (cb) cb(route);
             });
-            var dispose = history.listen(function(url) {
-                return transition(router, url, cb);
-            });
-            return function() {
-                dispose();
-                history = null;
-                routes = [];
-            };
         },
         navigate: function navigate(to, curr) {
             if (typeof to === 'string') {
@@ -143,8 +173,14 @@ export function createRouter() {
             }
             var url = to.pathname || '/';
             if (to.params) {
-                Object.keys(to.params).forEach(function(param) {
-                    url = url.replace(':' + param, to.params[param]);
+                var params = to.params;
+                url = url.replace(PARAM_RE, function(m, name, flag) {
+                    var v = params[name];
+                    if (v == null) return m;
+                    if (flag === '+' || flag === '*') {
+                        return String(v).split('/').map(encodeURIComponent).join('/');
+                    }
+                    return encodeURIComponent(v);
                 });
             }
             if (to.query && Object.keys(to.query).length) {
@@ -197,44 +233,6 @@ export function flatten(routeMap) {
     }
     addLevel(routeMap);
     return routes;
-}
-function transition(router, url, onNavigated) {
-    var route = router.match(url);
-    if (route) {
-        var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
-        try {
-            for(var _iterator = route.data[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
-                var r = _step.value;
-                if (r.redirect) {
-                    var _$url = redirectUrl(router, r.redirect, route);
-                    return router.navigate({
-                        url: _$url,
-                        replace: true
-                    });
-                }
-            }
-        } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally{
-            try {
-                if (!_iteratorNormalCompletion && _iterator.return != null) {
-                    _iterator.return();
-                }
-            } finally{
-                if (_didIteratorError) {
-                    throw _iteratorError;
-                }
-            }
-        }
-        if (onNavigated) onNavigated(route);
-    }
-}
-function redirectUrl(router, redirect, matchingRoute) {
-    if (typeof redirect === 'function') {
-        redirect = redirect(matchingRoute);
-    }
-    return router.href(redirect);
 }
 function data(routes, matchingRoute) {
     for(var i = 0; i < routes.length; i++){

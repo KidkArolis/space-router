@@ -2,28 +2,40 @@ import { match as findMatch } from './match'
 import { createHistory } from './history'
 import { qs as defaultQs } from './qs'
 
+const PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g
+const MAX_REDIRECTS = 10
+
 export function createRouter(options = {}) {
-  let history = null
-  let routes = []
   const mode = options.mode || 'history'
   const qs = options.qs || defaultQs
   const sync = options.sync || false
+  const history = createHistory({ mode, sync })
+
+  let routes = []
 
   const router = {
     listen(routeMap, cb) {
-      if (history) {
-        throw new Error('Already listening')
-      }
-
       routes = flatten(routeMap)
-      history = createHistory({ mode, sync })
-      const dispose = history.listen((url) => transition(router, url, cb))
-
-      return () => {
-        dispose()
-        history = null
-        routes = []
-      }
+      let redirects = 0
+      return history.listen((url) => {
+        const route = router.match(url)
+        if (!route) {
+          redirects = 0
+          return
+        }
+        for (const r of route.data) {
+          if (r.redirect) {
+            if (++redirects > MAX_REDIRECTS) {
+              redirects = 0
+              throw new Error('space-router: too many redirects')
+            }
+            const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect
+            return router.navigate({ url: router.href(target), replace: true })
+          }
+        }
+        redirects = 0
+        if (cb) cb(route)
+      })
     },
 
     navigate(to, curr) {
@@ -57,8 +69,14 @@ export function createRouter(options = {}) {
       let url = to.pathname || '/'
 
       if (to.params) {
-        Object.keys(to.params).forEach((param) => {
-          url = url.replace(':' + param, to.params[param])
+        const params = to.params
+        url = url.replace(PARAM_RE, (m, name, flag) => {
+          const v = params[name]
+          if (v == null) return m
+          if (flag === '+' || flag === '*') {
+            return String(v).split('/').map(encodeURIComponent).join('/')
+          }
+          return encodeURIComponent(v)
         })
       }
 
@@ -108,26 +126,6 @@ export function flatten(routeMap) {
   }
   addLevel(routeMap)
   return routes
-}
-
-function transition(router, url, onNavigated) {
-  const route = router.match(url)
-  if (route) {
-    for (const r of route.data) {
-      if (r.redirect) {
-        const url = redirectUrl(router, r.redirect, route)
-        return router.navigate({ url, replace: true })
-      }
-    }
-    if (onNavigated) onNavigated(route)
-  }
-}
-
-function redirectUrl(router, redirect, matchingRoute) {
-  if (typeof redirect === 'function') {
-    redirect = redirect(matchingRoute)
-  }
-  return router.href(redirect)
 }
 
 function data(routes, matchingRoute) {

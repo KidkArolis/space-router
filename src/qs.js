@@ -1,8 +1,11 @@
 export const qs = {
   parse(queryString) {
     return queryString.split('&').reduce((acc, pair) => {
-      const parts = pair.split('=')
-      acc[parts[0]] = decodeURIComponent(parts[1])
+      if (!pair) return acc
+      const i = pair.indexOf('=')
+      const key = decode(i < 0 ? pair : pair.slice(0, i))
+      const val = i < 0 ? '' : decode(pair.slice(i + 1))
+      acc[key] = val
       return acc
     }, {})
   },
@@ -11,10 +14,14 @@ export const qs = {
     return Object.keys(query)
       .reduce((acc, key) => {
         if (query[key] !== undefined) {
-          acc.push(key + '=' + encodeURIComponent(query[key]))
+          acc.push(encodeURIComponent(key) + '=' + encodeURIComponent(query[key]))
         }
         return acc
       }, [])
       .join('&')
   },
+}
+
+function decode(s) {
+  return decodeURIComponent(s.replace(/\+/g, ' '))
 }

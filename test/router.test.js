@@ -130,6 +130,63 @@ test('redirects', (t) => {
   dispose()
 })
 
+test('href encodes params', (t) => {
+  const { router, dispose } = createTestRouter()
+
+  // slashes (and other special chars) get encoded so match round-trips
+  t.is(router.href({ pathname: '/user/:id', params: { id: 'a/b' } }), '/user/a%2Fb')
+  t.is(router.href({ pathname: '/user/:id', params: { id: 'a b' } }), '/user/a%20b')
+  t.is(router.href({ pathname: '/user/:id', params: { id: 'a?b' } }), '/user/a%3Fb')
+  t.is(router.match('/user/a%2Fb').params.id, 'a/b')
+
+  dispose()
+})
+
+test('href strips param flags', (t) => {
+  const { router, dispose } = createTestRouter()
+
+  t.is(router.href({ pathname: '/user/:id?', params: { id: '7' } }), '/user/7')
+  t.is(router.href({ pathname: '/files/:p+', params: { p: 'a/b' } }), '/files/a/b')
+  t.is(router.href({ pathname: '/files/:p*', params: { p: 'a/b/c' } }), '/files/a/b/c')
+  // splat encodes per segment
+  t.is(router.href({ pathname: '/files/:p+', params: { p: 'a b/c' } }), '/files/a%20b/c')
+
+  dispose()
+})
+
+test('href handles params with shared name prefixes', (t) => {
+  const { router, dispose } = createTestRouter()
+
+  t.is(router.href({ pathname: '/x/:idName/y/:id', params: { id: 'ID', idName: 'NAME' } }), '/x/NAME/y/ID')
+
+  dispose()
+})
+
+test('redirects: caps an infinite loop', (t) => {
+  const router = createRouter({ mode: 'memory', sync: true })
+  router.listen([
+    { path: '/a', redirect: '/b' },
+    { path: '/b', redirect: '/a' },
+  ])
+
+  t.throws(() => router.navigate('/a'), { message: /too many redirects/ })
+})
+
+test('navigate before listen does not throw', (t) => {
+  const router = createRouter({ mode: 'memory', sync: true })
+  t.notThrows(() => router.navigate('/foo'))
+  t.is(router.getUrl(), '/foo')
+})
+
+test('getUrl after dispose does not throw', (t) => {
+  const router = createRouter({ mode: 'memory', sync: true })
+  const dispose = router.listen([{ path: '/foo' }], () => {})
+  router.navigate('/foo')
+  dispose()
+  t.notThrows(() => router.getUrl())
+  t.is(router.getUrl(), '/foo')
+})
+
 function createTestRouter(cb, { withoutCatchAll = false } = {}) {
   const router = createRouter({ mode: 'memory', sync: true })
   const dispose = router.listen(

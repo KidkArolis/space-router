@@ -1,12 +1,10 @@
-export function createHistory(options) {
+export function createHistory(options = {}) {
   const sync = options.sync
-  let mode = options.mode
+  let mode = options.mode || 'history'
   let raf
-  let onPop
+  let listener
 
   const memory = []
-  let off
-  let destroyed = false
 
   if (typeof window === 'undefined') {
     mode = 'memory'
@@ -18,37 +16,29 @@ export function createHistory(options) {
     }
   }
 
+  function emit() {
+    if (listener) listener(getUrl())
+  }
+
   function listen(onChange) {
-    onPop = () => onChange(getUrl())
-
+    if (listener) throw new Error('Already listening')
+    listener = onChange
+    let off
     if (mode !== 'memory') {
-      off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onPop)
-      raf(onPop)
+      off = on(window, mode === 'history' ? 'popstate' : 'hashchange', emit)
+      raf(emit)
     }
-
     return () => {
-      destroyed = true
+      listener = null
       if (off) off()
     }
   }
 
-  return {
-    listen,
-    getUrl,
-    push(url) {
-      go(url)
-    },
-    replace(url) {
-      go(url, true)
-    },
-  }
-
   function go(url, replace) {
-    if (destroyed) return
     url = url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/'
     if (mode === 'history') {
       history[replace ? 'replaceState' : 'pushState']({}, '', url)
-      raf(onPop)
+      raf(emit)
     } else if (mode === 'hash') {
       location[replace ? 'replace' : 'assign']('#' + url)
     } else if (mode === 'memory') {
@@ -57,7 +47,7 @@ export function createHistory(options) {
       } else {
         memory.push(url)
       }
-      raf(onPop)
+      raf(emit)
     }
   }
 
@@ -85,7 +75,18 @@ export function createHistory(options) {
   // in Firefox where location.hash will always be decoded.
   function getHash() {
     const match = location.href.match(/#(.*)$/)
-    return match ? match[1].replace('#', '') : ''
+    return match ? match[1] : ''
+  }
+
+  return {
+    listen,
+    getUrl,
+    push(url) {
+      go(url)
+    },
+    replace(url) {
+      go(url, true)
+    },
   }
 }
 

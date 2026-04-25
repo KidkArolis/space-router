@@ -1,11 +1,10 @@
-export function createHistory(options) {
+export function createHistory() {
+    var options = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
     var sync = options.sync;
-    var mode = options.mode;
+    var mode = options.mode || 'history';
     var raf;
-    var onPop;
+    var listener;
     var memory = [];
-    var off;
-    var destroyed = false;
     if (typeof window === 'undefined') {
         mode = 'memory';
         raf = sync ? function(cb) {
@@ -19,35 +18,27 @@ export function createHistory(options) {
             mode = 'hash';
         }
     }
+    function emit() {
+        if (listener) listener(getUrl());
+    }
     function listen(onChange) {
-        onPop = function onPop() {
-            return onChange(getUrl());
-        };
+        if (listener) throw new Error('Already listening');
+        listener = onChange;
+        var off;
         if (mode !== 'memory') {
-            off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onPop);
-            raf(onPop);
+            off = on(window, mode === 'history' ? 'popstate' : 'hashchange', emit);
+            raf(emit);
         }
         return function() {
-            destroyed = true;
+            listener = null;
             if (off) off();
         };
     }
-    return {
-        listen: listen,
-        getUrl: getUrl,
-        push: function push(url) {
-            go(url);
-        },
-        replace: function replace(url) {
-            go(url, true);
-        }
-    };
     function go(url, replace) {
-        if (destroyed) return;
         url = url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
         if (mode === 'history') {
             history[replace ? 'replaceState' : 'pushState']({}, '', url);
-            raf(onPop);
+            raf(emit);
         } else if (mode === 'hash') {
             location[replace ? 'replace' : 'assign']('#' + url);
         } else if (mode === 'memory') {
@@ -56,7 +47,7 @@ export function createHistory(options) {
             } else {
                 memory.push(url);
             }
-            raf(onPop);
+            raf(emit);
         }
     }
     function getUrl() {
@@ -79,8 +70,18 @@ export function createHistory(options) {
     // in Firefox where location.hash will always be decoded.
     function getHash() {
         var match = location.href.match(/#(.*)$/);
-        return match ? match[1].replace('#', '') : '';
+        return match ? match[1] : '';
     }
+    return {
+        listen: listen,
+        getUrl: getUrl,
+        push: function push(url) {
+            go(url);
+        },
+        replace: function replace(url) {
+            go(url, true);
+        }
+    };
 }
 function on(el, type, fn) {
     el.addEventListener(type, fn, false);
