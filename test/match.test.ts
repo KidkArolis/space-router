@@ -1,18 +1,18 @@
 import test from 'ava'
-import { qs } from '../src'
-import { matchOne as match } from '../src/match'
+import { qs } from '../src/index.ts'
+import { matchOne as match } from '../src/match.ts'
 
 test('match explicit equality', (t) => {
   t.deepEqual(match('/', '/').params, {})
   t.deepEqual(match('/a', '/a').params, {})
-  t.deepEqual(match('/a', '/b'), false)
+  t.deepEqual(match('/a', '/b'), undefined)
   t.deepEqual(match('/a/b', '/a/b').params, {})
-  t.deepEqual(match('/a/b', '/a/a'), false)
-  t.deepEqual(match('/a/b', '/b/b'), false)
+  t.deepEqual(match('/a/b', '/a/a'), undefined)
+  t.deepEqual(match('/a/b', '/b/b'), undefined)
 })
 
 test('match param segments', (t) => {
-  t.deepEqual(match('/:foo', '/'), false)
+  t.deepEqual(match('/:foo', '/'), undefined)
   t.deepEqual(match('/:foo', '/bar').params, { foo: 'bar' })
   t.deepEqual(match('/bar/:foo', '/bar/baz').params, { foo: 'baz' })
 })
@@ -22,7 +22,7 @@ test('match optional param segments', (t) => {
   t.deepEqual(match('/:foo?', '/bar').params, { foo: 'bar' })
   t.deepEqual(match('/:foo?/:bar?', '/').params, { foo: '', bar: '' })
   t.deepEqual(match('/:foo?/:bar?', '/bar').params, { foo: 'bar', bar: '' })
-  t.deepEqual(match('/:foo?/bar', '/bar'), false)
+  t.deepEqual(match('/:foo?/bar', '/bar'), undefined)
   t.deepEqual(match('/:foo?/bar', '/foo/bar').params, { foo: 'foo' })
 })
 
@@ -34,7 +34,7 @@ test('match splat param segments', (t) => {
 })
 
 test('match required splat param segments', (t) => {
-  t.deepEqual(match('/:foo+', '/'), false)
+  t.deepEqual(match('/:foo+', '/'), undefined)
   t.deepEqual(match('/:foo+', '/a').params, { foo: 'a' })
   t.deepEqual(match('/:foo+', '/a/b').params, { foo: 'a/b' })
   t.deepEqual(match('/:foo+', '/a/b/c').params, { foo: 'a/b/c' })
