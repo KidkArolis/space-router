@@ -2,10 +2,22 @@
   "name": "space-router",
   "description": "All the routing essentials.",
   "version": "0.9.5",
-  "main": "dist/cjs",
-  "module": "dist/esm",
-  "types": "./index.d.ts",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "license": "ISC",
+  "sideEffects": false,
   "repository": {
     "type": "git",
     "url": "git://github.com/KidkArolis/space-router.git"
@@ -21,36 +33,30 @@
     "url"
   ],
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   },
   "author": "Karolis Narkevicius",
   "scripts": {
-    "test": "npm run build && oxlint -c oxlintrc.json && oxfmt --check '**/*.{js,css,yml}' && c8 ava",
-    "format": "oxfmt --write '**/*.{js,css,yml}'",
+    "test": "npm run build && oxlint -c oxlintrc.json && oxfmt --check '**/*.{ts,js,css,yml}' && c8 ava",
+    "format": "oxfmt --write '**/*.{ts,js,css,yml}'",
     "coverage": "c8 --reporter=html ava",
-    "build": "node ./tasks/build.js",
-    "watch": "node ./tasks/build.js -w",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "watch": "tsc -p tsconfig.build.json --watch",
     "release": "np --no-release-draft",
     "release:beta": "np --tag=beta --no-release-draft",
     "release:docs": "hugo -s docs && gh-pages -d docs/public"
   },
   "devDependencies": {
-    "@swc-node/register": "^1.11.1",
-    "@swc/cli": "^0.8.1",
-    "@swc/core": "^1.15.30",
     "ava": "^7.0.0",
     "c8": "^11.0.0",
-    "execa": "^9.6.1",
     "gh-pages": "^6.3.0",
     "oxfmt": "^0.46.0",
-    "oxlint": "^1.61.0"
+    "oxlint": "^1.61.0",
+    "typescript": "^6.0.3"
   },
   "ava": {
-    "require": [
-      "@swc-node/register"
-    ]
-  },
-  "overrides": {
-    "minimatch": ">=10.2.1"
+    "extensions": {
+      "ts": "module"
+    }
   }
 }

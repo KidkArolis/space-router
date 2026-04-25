@@ -1,5 +1,5 @@
 import test from 'ava'
-import { qs, createRouter } from '../src/index'
+import { qs, createRouter } from '../src/index.ts'
 
 test('createRouter, listen, navigate and dispose', (t) => {
   const calls = []

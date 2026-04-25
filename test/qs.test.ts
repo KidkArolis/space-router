@@ -1,5 +1,5 @@
 import test from 'ava'
-import { qs } from '../src'
+import { qs } from '../src/index.ts'
 
 test('qs.parse handles a key without =', (t) => {
   t.deepEqual(qs.parse('foo'), { foo: '' })

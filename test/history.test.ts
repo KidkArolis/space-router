@@ -1,5 +1,5 @@
 import test from 'ava'
-import { createHistory } from '../src/history'
+import { createHistory } from '../src/history.ts'
 
 // history.js looks for `typeof window === 'undefined'` to pick memory vs browser
 // mode. To exercise the history-mode getUrl path we briefly stand up a tiny
@@ -13,7 +13,7 @@ function withFakeDom(href, fn) {
   }
   const url = new URL(href)
   globalThis.window = { addEventListener() {}, removeEventListener() {} }
-  globalThis.location = { href, pathname: url.pathname, search: url.search }
+  globalThis.location = { href, pathname: url.pathname, search: url.search, hash: url.hash }
   globalThis.history = { pushState() {}, replaceState() {} }
   globalThis.requestAnimationFrame = (cb) => cb()
   try {
