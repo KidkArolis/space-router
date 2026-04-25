@@ -8,6 +8,11 @@ export interface RouterOptions {
 }
 export interface Route<Data = Record<string, unknown>> extends MatchedRoute {
     data: Data[];
+    /**
+     * Opaque state passed via `navigate(to, { state })`. Populated when the
+     * route is delivered through `listen()`; `undefined` from `match()`.
+     */
+    state?: unknown;
 }
 export interface NavigateTarget {
     url?: string;
@@ -17,6 +22,13 @@ export interface NavigateTarget {
     hash?: string | null;
     replace?: boolean;
     merge?: boolean;
+    /**
+     * Opaque value stashed alongside the navigation. Forwarded to
+     * `history.pushState`/`replaceState` in history mode and surfaced as
+     * `route.state` in the listen callback. Ignored in hash mode (no DOM
+     * support).
+     */
+    state?: unknown;
 }
 export type To = string | NavigateTarget;
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To);

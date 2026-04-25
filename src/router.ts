@@ -10,6 +10,11 @@ export interface RouterOptions {
 
 export interface Route<Data = Record<string, unknown>> extends MatchedRoute {
   data: Data[]
+  /**
+   * Opaque state passed via `navigate(to, { state })`. Populated when the
+   * route is delivered through `listen()`; `undefined` from `match()`.
+   */
+  state?: unknown
 }
 
 export interface NavigateTarget {
@@ -20,6 +25,13 @@ export interface NavigateTarget {
   hash?: string | null
   replace?: boolean
   merge?: boolean
+  /**
+   * Opaque value stashed alongside the navigation. Forwarded to
+   * `history.pushState`/`replaceState` in history mode and surfaced as
+   * `route.state` in the listen callback. Ignored in hash mode (no DOM
+   * support).
+   */
+  state?: unknown
 }
 
 export type To = string | NavigateTarget
@@ -60,12 +72,13 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
     listen(routeMap, cb) {
       routes = flatten(routeMap as RouteDefinition[])
       let redirects = 0
-      return history.listen((url) => {
+      return history.listen((url, state) => {
         const route = router.match(url)
         if (!route) {
           redirects = 0
           return
         }
+        route.state = state
         for (const r of route.data as Array<{ redirect?: Redirect<Data> }>) {
           if (r.redirect) {
             if (++redirects > MAX_REDIRECTS) {
@@ -73,7 +86,8 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
               throw new Error('space-router: too many redirects')
             }
             const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect
-            return router.navigate({ url: router.href(target), replace: true })
+            const targetState = typeof target === 'object' && target ? target.state : undefined
+            return router.navigate({ url: router.href(target), replace: true, state: targetState })
           }
         }
         redirects = 0
@@ -85,9 +99,9 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
       const target: NavigateTarget = typeof to === 'string' ? { url: to } : to
       const url = router.href(target, curr)
       if (target.replace) {
-        history.replace(url)
+        history.replace(url, target.state)
       } else {
-        history.push(url)
+        history.push(url, target.state)
       }
     },
 

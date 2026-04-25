@@ -1,9 +1,9 @@
 export type Mode = 'history' | 'hash' | 'memory';
 export interface History {
-    listen(onChange: (url: string) => void): () => void;
+    listen(onChange: (url: string, state: unknown) => void): () => void;
     getUrl(): string;
-    push(url: string): void;
-    replace(url: string): void;
+    push(url: string, state?: unknown): void;
+    replace(url: string, state?: unknown): void;
 }
 export interface CreateHistoryOptions {
     mode?: Mode;

@@ -13,12 +13,13 @@ export function createRouter(options = {}) {
         listen(routeMap, cb) {
             routes = flatten(routeMap);
             let redirects = 0;
-            return history.listen((url) => {
+            return history.listen((url, state) => {
                 const route = router.match(url);
                 if (!route) {
                     redirects = 0;
                     return;
                 }
+                route.state = state;
                 for (const r of route.data) {
                     if (r.redirect) {
                         if (++redirects > MAX_REDIRECTS) {
@@ -26,7 +27,8 @@ export function createRouter(options = {}) {
                             throw new Error('space-router: too many redirects');
                         }
                         const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect;
-                        return router.navigate({ url: router.href(target), replace: true });
+                        const targetState = typeof target === 'object' && target ? target.state : undefined;
+                        return router.navigate({ url: router.href(target), replace: true, state: targetState });
                     }
                 }
                 redirects = 0;
@@ -38,10 +40,10 @@ export function createRouter(options = {}) {
             const target = typeof to === 'string' ? { url: to } : to;
             const url = router.href(target, curr);
             if (target.replace) {
-                history.replace(url);
+                history.replace(url, target.state);
             }
             else {
-                history.push(url);
+                history.push(url, target.state);
             }
         },
         href(to, curr) {

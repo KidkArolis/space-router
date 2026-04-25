@@ -187,6 +187,33 @@ test('getUrl after dispose does not throw', (t) => {
   t.is(router.getUrl(), '/foo')
 })
 
+test('navigation state is delivered as route.state', (t) => {
+  const states: unknown[] = []
+  const router = createRouter({ mode: 'memory', sync: true })
+  router.listen([{ path: '*' }], (route) => {
+    states.push(route.state)
+  })
+
+  router.navigate({ url: '/a', state: { from: 'list', scrollY: 100 } })
+  router.navigate({ url: '/b', state: { from: 'detail' }, replace: true })
+  router.navigate('/c') // no state
+
+  t.deepEqual(states, [{ from: 'list', scrollY: 100 }, { from: 'detail' }, undefined])
+})
+
+test('redirects propagate state from object targets', (t) => {
+  const states: unknown[] = []
+  const router = createRouter({ mode: 'memory', sync: true })
+  router.listen([{ path: '/a', redirect: { url: '/b', state: { reason: 'a→b' } } }, { path: '/b' }], (route) => {
+    states.push(route.state)
+  })
+
+  router.navigate({ url: '/a', state: { reason: 'incoming' } })
+
+  // /a → /b redirect; final route is /b with the redirect target's state
+  t.deepEqual(states, [{ reason: 'a→b' }])
+})
+
 test('coalesces rapid async navigations into a single emit', async (t) => {
   const calls: string[] = []
   const router = createRouter({ mode: 'memory' })

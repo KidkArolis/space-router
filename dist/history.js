@@ -4,12 +4,20 @@ export function createHistory(options = {}) {
     let listener = null;
     let pending = false;
     const memory = [];
+    const memoryStates = [];
     if (typeof window === 'undefined') {
         mode = 'memory';
     }
     function emit() {
         if (listener)
-            listener(getUrl());
+            listener(getUrl(), getState());
+    }
+    function getState() {
+        if (mode === 'memory')
+            return memoryStates[memoryStates.length - 1];
+        if (mode === 'history')
+            return history.state;
+        return undefined;
     }
     function schedule() {
         if (sync)
@@ -37,13 +45,14 @@ export function createHistory(options = {}) {
                 off();
         };
     }
-    function go(url, replace) {
+    function go(url, replace, state) {
         url = url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
         if (mode === 'history') {
-            history[replace ? 'replaceState' : 'pushState']({}, '', url);
+            history[replace ? 'replaceState' : 'pushState'](state ?? null, '', url);
             schedule();
         }
         else if (mode === 'hash') {
+            // hash mode has no native state support; the state argument is dropped.
             // hashchange only fires when the URL actually changes; if it doesn't,
             // we schedule the emit manually so navigation stays consistent with
             // history mode (where pushState is silent and we always schedule).
@@ -55,9 +64,11 @@ export function createHistory(options = {}) {
         else if (mode === 'memory') {
             if (replace) {
                 memory[memory.length - 1] = url;
+                memoryStates[memoryStates.length - 1] = state;
             }
             else {
                 memory.push(url);
+                memoryStates.push(state);
             }
             schedule();
         }
@@ -82,11 +93,11 @@ export function createHistory(options = {}) {
     return {
         listen,
         getUrl,
-        push(url) {
-            go(url);
+        push(url, state) {
+            go(url, false, state);
         },
-        replace(url) {
-            go(url, true);
+        replace(url, state) {
+            go(url, true, state);
         },
     };
 }
