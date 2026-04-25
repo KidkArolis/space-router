@@ -5,7 +5,7 @@
   "main": "dist/cjs",
   "module": "dist/esm",
   "types": "./index.d.ts",
-  "license": "ICS",
+  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git://github.com/KidkArolis/space-router.git"
