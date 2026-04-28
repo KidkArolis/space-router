@@ -6,8 +6,14 @@ export interface RouterOptions {
     qs?: Qs;
     sync?: boolean;
 }
+export interface MatcherOptions {
+    qs?: Qs;
+}
+export type RouteSegment<Data = Record<string, unknown>> = Data & {
+    path?: string;
+};
 export interface Route<Data = Record<string, unknown>> extends MatchedRoute {
-    data: Data[];
+    data: RouteSegment<Data>[];
 }
 export interface NavigateTarget {
     url?: string;
@@ -32,11 +38,15 @@ export interface Router<Data = Record<string, unknown>> {
     match(url: string): Route<Data> | undefined;
     getUrl(): string;
 }
-interface FlatRoute {
+export interface Matcher<Data = Record<string, unknown>> {
+    match(url: string | undefined): Route<Data> | undefined;
+}
+interface FlatRoute<Data = Record<string, unknown>> {
     pattern: string;
-    data: Array<Record<string, unknown>>;
+    data: RouteSegment<Data>[];
 }
 export declare function createRouter<Data = Record<string, unknown>>(options?: RouterOptions): Router<Data>;
-export declare function flatten(routeMap: RouteDefinition[]): FlatRoute[];
+export declare function createMatcher<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[], options?: MatcherOptions): Matcher<Data>;
+export declare function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[]): FlatRoute<Data>[];
 export declare function merge(curr: Partial<Route> | NavigateTarget | undefined, to: NavigateTarget): NavigateTarget;
 export {};

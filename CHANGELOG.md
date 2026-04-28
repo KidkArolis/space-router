@@ -1,3 +1,9 @@
+## 1.1.0
+
+- add `createMatcher(routes, options?)`, a pure route-map matcher for consumers that need to match a URL before subscribing to history with `listen`.
+- `createRouter()` now uses `createMatcher()` internally, keeping router matching and standalone matching on the same implementation path.
+- matched route `data` entries now preserve each segment's declared `path`, so consumers can distinguish route-definition patterns from the matched `pathname`.
+
 ## 1.0.0
 
 A TypeScript rewrite, ESM-only output, and a batch of correctness fixes.
