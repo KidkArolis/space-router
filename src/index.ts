@@ -6,7 +6,7 @@ export type { Qs } from './qs.ts'
 export type { Mode, History, CreateHistoryOptions } from './history.ts'
 export type {
   MatcherOptions,
-  RouteSegment,
+  RouteData,
   RouterOptions,
   Route,
   NavigateTarget,

@@ -9,11 +9,8 @@ export interface RouterOptions {
 export interface MatcherOptions {
     qs?: Qs;
 }
-export type RouteSegment<Data = Record<string, unknown>> = Data & {
-    path?: string;
-};
 export interface Route<Data = Record<string, unknown>> extends MatchedRoute {
-    data: RouteSegment<Data>[];
+    data: RouteData<Data>[];
 }
 export interface NavigateTarget {
     url?: string;
@@ -26,9 +23,11 @@ export interface NavigateTarget {
 }
 export type To = string | NavigateTarget;
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To);
-export type RouteDefinition<Data = Record<string, unknown>> = Data & {
+export type RouteData<Data = Record<string, unknown>> = Data & {
     path?: string;
     redirect?: Redirect<Data>;
+};
+export type RouteDefinition<Data = Record<string, unknown>> = RouteData<Data> & {
     routes?: RouteDefinition<Data>[];
 };
 export interface Router<Data = Record<string, unknown>> {
@@ -43,7 +42,7 @@ export interface Matcher<Data = Record<string, unknown>> {
 }
 interface FlatRoute<Data = Record<string, unknown>> {
     pattern: string;
-    data: RouteSegment<Data>[];
+    data: RouteData<Data>[];
 }
 export declare function createRouter<Data = Record<string, unknown>>(options?: RouterOptions): Router<Data>;
 export declare function createMatcher<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[], options?: MatcherOptions): Matcher<Data>;

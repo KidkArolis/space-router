@@ -12,12 +12,8 @@ export interface MatcherOptions {
   qs?: Qs
 }
 
-export type RouteSegment<Data = Record<string, unknown>> = Data & {
-  path?: string
-}
-
 export interface Route<Data = Record<string, unknown>> extends MatchedRoute {
-  data: RouteSegment<Data>[]
+  data: RouteData<Data>[]
 }
 
 export interface NavigateTarget {
@@ -34,9 +30,12 @@ export type To = string | NavigateTarget
 
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To)
 
-export type RouteDefinition<Data = Record<string, unknown>> = Data & {
+export type RouteData<Data = Record<string, unknown>> = Data & {
   path?: string
   redirect?: Redirect<Data>
+}
+
+export type RouteDefinition<Data = Record<string, unknown>> = RouteData<Data> & {
   routes?: RouteDefinition<Data>[]
 }
 
@@ -54,7 +53,7 @@ export interface Matcher<Data = Record<string, unknown>> {
 
 interface FlatRoute<Data = Record<string, unknown>> {
   pattern: string
-  data: RouteSegment<Data>[]
+  data: RouteData<Data>[]
 }
 
 const PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g
@@ -181,7 +180,7 @@ export function createMatcher<Data = Record<string, unknown>>(
 
 export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[]): FlatRoute<Data>[] {
   const routes: FlatRoute<Data>[] = []
-  const parentData: RouteSegment<Data>[] = []
+  const parentData: RouteData<Data>[] = []
   function addLevel(level: RouteDefinition<Data>[]) {
     level.forEach((route) => {
       const {
@@ -192,7 +191,7 @@ export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinitio
         path?: string
         routes?: RouteDefinition<Data>[]
       }
-      const segment = { path, ...routeData } as RouteSegment<Data>
+      const segment = { path, ...routeData } as RouteData<Data>
       routes.push({ pattern: path, data: parentData.concat([segment]) })
       if (children) {
         parentData.push(segment)
