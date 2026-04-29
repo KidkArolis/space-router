@@ -8,8 +8,12 @@ export interface RouterOptions {
   sync?: boolean
 }
 
+export interface MatcherOptions {
+  qs?: Qs
+}
+
 export interface Route<Data = Record<string, unknown>> extends MatchedRoute {
-  data: Data[]
+  data: RouteData<Data>[]
 }
 
 export interface NavigateTarget {
@@ -26,9 +30,12 @@ export type To = string | NavigateTarget
 
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To)
 
-export type RouteDefinition<Data = Record<string, unknown>> = Data & {
+export type RouteData<Data = Record<string, unknown>> = Data & {
   path?: string
   redirect?: Redirect<Data>
+}
+
+export type RouteDefinition<Data = Record<string, unknown>> = RouteData<Data> & {
   routes?: RouteDefinition<Data>[]
 }
 
@@ -40,9 +47,13 @@ export interface Router<Data = Record<string, unknown>> {
   getUrl(): string
 }
 
-interface FlatRoute {
+export interface Matcher<Data = Record<string, unknown>> {
+  match(url: string | undefined): Route<Data> | undefined
+}
+
+interface FlatRoute<Data = Record<string, unknown>> {
   pattern: string
-  data: Array<Record<string, unknown>>
+  data: RouteData<Data>[]
 }
 
 const PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g
@@ -54,14 +65,14 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
   const sync = options.sync || false
   const history = createHistory({ mode, sync })
 
-  let routes: FlatRoute[] = []
+  let matcher = createMatcher<Data>([], { qs })
 
   const router: Router<Data> = {
     listen(routeMap, cb) {
-      routes = flatten(routeMap as RouteDefinition[])
+      matcher = createMatcher(routeMap, { qs })
       let redirects = 0
       return history.listen((url) => {
-        const route = router.match(url)
+        const route = matcher.match(url)
         if (!route) {
           redirects = 0
           return
@@ -138,11 +149,7 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
     },
 
     match(url) {
-      const route = findMatch(routes, url, qs)
-      if (route) {
-        return { ...route, data: data(routes, route) } as Route<Data>
-      }
-      return undefined
+      return matcher.match(url)
     },
 
     getUrl() {
@@ -153,22 +160,41 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
   return router
 }
 
-export function flatten(routeMap: RouteDefinition[]): FlatRoute[] {
-  const routes: FlatRoute[] = []
-  const parentData: Array<Record<string, unknown>> = []
-  function addLevel(level: RouteDefinition[]) {
+export function createMatcher<Data = Record<string, unknown>>(
+  routeMap: RouteDefinition<Data>[],
+  options: MatcherOptions = {},
+): Matcher<Data> {
+  const routes = flatten(routeMap)
+  const qs = options.qs || defaultQs
+
+  return {
+    match(url) {
+      const route = findMatch(routes, url, qs)
+      if (route) {
+        return { ...route, data: data(routes, route) } as Route<Data>
+      }
+      return undefined
+    },
+  }
+}
+
+export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[]): FlatRoute<Data>[] {
+  const routes: FlatRoute<Data>[] = []
+  const parentData: RouteData<Data>[] = []
+  function addLevel(level: RouteDefinition<Data>[]) {
     level.forEach((route) => {
       const {
         path = '',
         routes: children,
         ...routeData
-      } = route as RouteDefinition & {
+      } = route as RouteDefinition<Data> & {
         path?: string
-        routes?: RouteDefinition[]
+        routes?: RouteDefinition<Data>[]
       }
-      routes.push({ pattern: path, data: parentData.concat([routeData]) })
+      const segment = { path, ...routeData } as RouteData<Data>
+      routes.push({ pattern: path, data: parentData.concat([segment]) })
       if (children) {
-        parentData.push(routeData)
+        parentData.push(segment)
         addLevel(children)
         parentData.pop()
       }
@@ -178,7 +204,7 @@ export function flatten(routeMap: RouteDefinition[]): FlatRoute[] {
   return routes
 }
 
-function data(routes: FlatRoute[], matchingRoute: { pattern: string }) {
+function data<Data = Record<string, unknown>>(routes: FlatRoute<Data>[], matchingRoute: { pattern: string }) {
   for (let i = 0; i < routes.length; i++) {
     if (routes[i].pattern === matchingRoute.pattern) {
       return routes[i].data

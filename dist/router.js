@@ -8,13 +8,13 @@ export function createRouter(options = {}) {
     const qs = options.qs || defaultQs;
     const sync = options.sync || false;
     const history = createHistory({ mode, sync });
-    let routes = [];
+    let matcher = createMatcher([], { qs });
     const router = {
         listen(routeMap, cb) {
-            routes = flatten(routeMap);
+            matcher = createMatcher(routeMap, { qs });
             let redirects = 0;
             return history.listen((url) => {
-                const route = router.match(url);
+                const route = matcher.match(url);
                 if (!route) {
                     redirects = 0;
                     return;
@@ -84,11 +84,7 @@ export function createRouter(options = {}) {
             return url;
         },
         match(url) {
-            const route = findMatch(routes, url, qs);
-            if (route) {
-                return { ...route, data: data(routes, route) };
-            }
-            return undefined;
+            return matcher.match(url);
         },
         getUrl() {
             return history.getUrl();
@@ -96,15 +92,29 @@ export function createRouter(options = {}) {
     };
     return router;
 }
+export function createMatcher(routeMap, options = {}) {
+    const routes = flatten(routeMap);
+    const qs = options.qs || defaultQs;
+    return {
+        match(url) {
+            const route = findMatch(routes, url, qs);
+            if (route) {
+                return { ...route, data: data(routes, route) };
+            }
+            return undefined;
+        },
+    };
+}
 export function flatten(routeMap) {
     const routes = [];
     const parentData = [];
     function addLevel(level) {
         level.forEach((route) => {
             const { path = '', routes: children, ...routeData } = route;
-            routes.push({ pattern: path, data: parentData.concat([routeData]) });
+            const segment = { path, ...routeData };
+            routes.push({ pattern: path, data: parentData.concat([segment]) });
             if (children) {
-                parentData.push(routeData);
+                parentData.push(segment);
                 addLevel(children);
                 parentData.pop();
             }

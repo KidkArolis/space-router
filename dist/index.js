@@ -1,3 +1,3 @@
 export { qs } from "./qs.js";
 export { createHistory } from "./history.js";
-export { createRouter, merge } from "./router.js";
+export { createMatcher, createRouter, merge } from "./router.js";

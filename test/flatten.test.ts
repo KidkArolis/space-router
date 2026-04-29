@@ -8,8 +8,8 @@ test('converts array of routes to array of internal route descriptors', (t) => {
       { path: '/bar', a: 'bar' },
     ]),
     [
-      { pattern: '/foo', data: [{ a: 'foo' }] },
-      { pattern: '/bar', data: [{ a: 'bar' }] },
+      { pattern: '/foo', data: [{ path: '/foo', a: 'foo' }] },
+      { pattern: '/bar', data: [{ path: '/bar', a: 'bar' }] },
     ],
   )
 })
@@ -44,11 +44,30 @@ test('handles nested routes', (t) => {
       },
     ]),
     [
-      { pattern: '', data: [{ component: 'root' }] },
-      { pattern: '/foo', data: [{ component: 'root' }, { component: 'foo' }] },
-      { pattern: '/foo/bar', data: [{ component: 'root' }, { component: 'foo' }, { component: 'bar' }] },
-      { pattern: '/second', data: [{ component: 'second-root' }] },
-      { pattern: '/baz/*', data: [{ component: 'second-root' }, { component: 'baz' }] },
+      { pattern: '', data: [{ path: '', component: 'root' }] },
+      {
+        pattern: '/foo',
+        data: [
+          { path: '', component: 'root' },
+          { path: '/foo', component: 'foo' },
+        ],
+      },
+      {
+        pattern: '/foo/bar',
+        data: [
+          { path: '', component: 'root' },
+          { path: '/foo', component: 'foo' },
+          { path: '/foo/bar', component: 'bar' },
+        ],
+      },
+      { pattern: '/second', data: [{ path: '/second', component: 'second-root' }] },
+      {
+        pattern: '/baz/*',
+        data: [
+          { path: '/second', component: 'second-root' },
+          { path: '/baz/*', component: 'baz' },
+        ],
+      },
     ],
   )
 })
