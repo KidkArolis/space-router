@@ -53,7 +53,7 @@ export function createHistory(options = {}) {
                 schedule();
         }
         else if (mode === 'memory') {
-            if (replace) {
+            if (replace && memory.length) {
                 memory[memory.length - 1] = url;
             }
             else {
@@ -64,7 +64,7 @@ export function createHistory(options = {}) {
     }
     function getUrl() {
         if (mode === 'memory') {
-            return memory[memory.length - 1];
+            return memory[memory.length - 1] ?? '';
         }
         const hash = getHash();
         if (mode === 'hash') {

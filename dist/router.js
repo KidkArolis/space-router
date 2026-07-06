@@ -116,7 +116,11 @@ export function flatten(routeMap) {
         level.forEach((route) => {
             const { path = '', routes: children, ...routeData } = route;
             const segment = { path, ...routeData };
-            routes.push({ pattern: path, data: parentData.concat([segment]) });
+            // pathless routes only contribute data to their children — they have
+            // no pattern of their own to match
+            if (path) {
+                routes.push({ pattern: path, data: parentData.concat([segment]) });
+            }
             if (children) {
                 parentData.push(segment);
                 addLevel(children);

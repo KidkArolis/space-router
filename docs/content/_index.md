@@ -90,8 +90,9 @@ const router = createRouter(options)
 Create the router object.
 
 - `options` object
-  - `mode` - one of `history`, `hash`, `memory`, default is `history`
+  - `mode` - one of `history`, `hash`, `memory`, default is `history`. `memory` is used automatically when there is no `window`, e.g. on the server
   - `qs` - a custom query string parser, an object of shape `{ parse, stringify }`
+  - `sync` - set to true to deliver url changes to the listener synchronously. By default changes are coalesced and delivered in a microtask, so rapid successive navigations produce a single listener call
 
 ### `listen`
 
@@ -223,3 +224,28 @@ const url = router.getUrl()
 Get the current url string. Note, this only includes the path and does not include the protocol and host.
 
 You shouldn't need to read this most of the time since the updates to url changes and the matching route will be provided in the `listen` callback. Be especially careful if you're performing asynchronous logic in your callback, such as lazily importing some modules, where you're then constructing links based on the current url - use route provided to your listener instead of calling `getUrl` as the url might already have been updated to another value in the meantime.
+
+### `createHistory`
+
+```js
+import { createHistory } from 'space-router'
+
+const history = createHistory({ mode: 'history' })
+const dispose = history.listen((url) => console.log(url))
+history.push('/foo')
+history.replace('/bar')
+const url = history.getUrl()
+```
+
+A lower level building block that the router uses internally. It wraps the three url sources behind a single interface — useful if you want to listen to url changes and navigate without declaring routes or matching.
+
+- `options` object
+  - `mode` - one of `history`, `hash`, `memory`, default is `history`. `memory` is used automatically when there is no `window`, e.g. on the server
+  - `sync` - same as in `createRouter`
+
+Returns an object with:
+
+- `listen(onChange)` - subscribe to url changes, returns a dispose function. Only one listener can be attached at a time
+- `getUrl()` - the current url string
+- `push(url)` - navigate, pushing a new entry onto the navigation stack
+- `replace(url)` - navigate, replacing the current entry

@@ -2,6 +2,7 @@
 
 - add `createMatcher(routes, options?)` for matching urls against a route map without creating a router — useful for matching before (or without) subscribing to url changes with `listen`, for example in server side rendering or tests.
 - each entry in a matched route's `data` array now includes the `path` it was declared with.
+- `getUrl()` in memory mode now returns `''` instead of `undefined` before any navigation.
 
 ## 1.0.0
 

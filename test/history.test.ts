@@ -93,6 +93,19 @@ test.serial('getUrl in history mode returns just pathname when no hash', (t) => 
   })
 })
 
+test('memory mode getUrl returns an empty string before any navigation', (t) => {
+  const h = createHistory({ mode: 'memory', sync: true })
+  t.is(h.getUrl(), '')
+})
+
+test('memory mode replace before any push creates the first entry', (t) => {
+  const h = createHistory({ mode: 'memory', sync: true })
+  h.replace('/foo')
+  t.is(h.getUrl(), '/foo')
+  h.push('/bar')
+  t.is(h.getUrl(), '/bar')
+})
+
 test.serial('hash mode emits when navigating to the current URL', (t) => {
   const calls = []
   withFakeHashDom(() => {

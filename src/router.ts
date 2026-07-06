@@ -197,7 +197,11 @@ export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinitio
         routes?: RouteDefinition<Data>[]
       }
       const segment = { path, ...routeData } as RouteData<Data>
-      routes.push({ pattern: path, data: parentData.concat([segment]) })
+      // pathless routes only contribute data to their children — they have
+      // no pattern of their own to match
+      if (path) {
+        routes.push({ pattern: path, data: parentData.concat([segment]) })
+      }
       if (children) {
         parentData.push(segment)
         addLevel(children)

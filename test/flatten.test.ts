@@ -44,7 +44,8 @@ test('handles nested routes', (t) => {
       },
     ]),
     [
-      { pattern: '', data: [{ path: '', component: 'root' }] },
+      // the pathless root route produces no matchable entry of its own,
+      // it only contributes data to its children
       {
         pattern: '/foo',
         data: [

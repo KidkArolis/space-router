@@ -65,7 +65,7 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
       location[replace ? 'replace' : 'assign']('#' + url)
       if (same) schedule()
     } else if (mode === 'memory') {
-      if (replace) {
+      if (replace && memory.length) {
         memory[memory.length - 1] = url
       } else {
         memory.push(url)
@@ -76,7 +76,7 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
 
   function getUrl(): string {
     if (mode === 'memory') {
-      return memory[memory.length - 1]
+      return memory[memory.length - 1] ?? ''
     }
 
     const hash = getHash()
