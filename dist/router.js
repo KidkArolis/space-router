@@ -6,8 +6,7 @@ const MAX_REDIRECTS = 10;
 export function createRouter(options = {}) {
     const mode = options.mode || 'history';
     const qs = options.qs || defaultQs;
-    const sync = options.sync || false;
-    const history = createHistory({ mode, sync });
+    const history = createHistory({ mode, sync: options.sync, schedule: options.schedule });
     let matcher = createMatcher([], { qs });
     const router = {
         listen(routeMap, cb) {

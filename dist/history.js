@@ -1,8 +1,9 @@
 export function createHistory(options = {}) {
-    const sync = !!options.sync;
+    const schedule = options.schedule || (options.sync ? (fire) => fire() : (fire) => queueMicrotask(fire));
     let mode = options.mode || 'history';
     let listener = null;
-    let pending = false;
+    let seq = 0;
+    let selfNavs = 0;
     const memory = [];
     if (typeof window === 'undefined') {
         mode = 'memory';
@@ -11,16 +12,24 @@ export function createHistory(options = {}) {
         if (listener)
             listener(getUrl());
     }
-    function schedule() {
-        if (sync)
-            return emit();
-        if (pending)
-            return;
-        pending = true;
-        queueMicrotask(() => {
-            pending = false;
-            emit();
-        });
+    // each scheduled fire captures its seq: superseded fires no-op, and the
+    // surviving one reads the url fresh in emit() — so racing schedules of any
+    // mix (e.g. a deferred traversal emit overtaken by a push's microtask emit)
+    // coalesce into a single emit of the final url
+    function scheduleEmit(traversal) {
+        const s = ++seq;
+        schedule(() => {
+            if (s === seq)
+                emit();
+        }, { traversal });
+    }
+    function onTraversal() {
+        // a hashchange caused by our own push/replace is a navigation,
+        // not a back/forward traversal
+        const traversal = selfNavs === 0;
+        if (selfNavs > 0)
+            selfNavs--;
+        scheduleEmit(traversal);
     }
     function listen(onChange) {
         if (listener)
@@ -28,8 +37,8 @@ export function createHistory(options = {}) {
         listener = onChange;
         let off;
         if (mode !== 'memory') {
-            off = on(window, mode === 'history' ? 'popstate' : 'hashchange', schedule);
-            schedule();
+            off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onTraversal);
+            scheduleEmit(false);
         }
         return () => {
             listener = null;
@@ -41,16 +50,18 @@ export function createHistory(options = {}) {
         url = url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
         if (mode === 'history') {
             history[replace ? 'replaceState' : 'pushState']({}, '', url);
-            schedule();
+            scheduleEmit(false);
         }
         else if (mode === 'hash') {
             // hashchange only fires when the URL actually changes; if it doesn't,
             // we schedule the emit manually so navigation stays consistent with
             // history mode (where pushState is silent and we always schedule).
             const same = url === getUrl();
+            if (!same)
+                selfNavs++;
             location[replace ? 'replace' : 'assign']('#' + url);
             if (same)
-                schedule();
+                scheduleEmit(false);
         }
         else if (mode === 'memory') {
             if (replace && memory.length) {
@@ -59,7 +70,7 @@ export function createHistory(options = {}) {
             else {
                 memory.push(url);
             }
-            schedule();
+            scheduleEmit(false);
         }
     }
     function getUrl() {

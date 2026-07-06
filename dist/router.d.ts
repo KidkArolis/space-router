@@ -1,10 +1,11 @@
 import { type MatchedRoute } from './match.ts';
-import { type Mode } from './history.ts';
+import { type Mode, type Schedule } from './history.ts';
 import { type Qs } from './qs.ts';
 export interface RouterOptions {
     mode?: Mode;
     qs?: Qs;
     sync?: boolean;
+    schedule?: Schedule;
 }
 export interface MatcherOptions {
     qs?: Qs;

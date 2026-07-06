@@ -1,3 +1,8 @@
+## 1.2.0
+
+- add a `schedule(fire, info)` option to `createRouter` and `createHistory` for controlling how url changes are delivered to the listener. `info.traversal` is true for back/forward traversals (`popstate`/`hashchange`), false for programmatic navigations and the initial `listen` call. `sync: true` is now shorthand for the immediate scheduler `(fire) => fire()`; an explicit `schedule` takes precedence.
+- internal emit coalescing now uses a sequence guard: superseded emits no-op and the surviving one reads the url at fire time, so mixed schedules (e.g. a deferred traversal emit racing a push's microtask emit) collapse to a single emit of the final url.
+
 ## 1.1.0
 
 - add `createMatcher(routes, options?)` for matching urls against a route map without creating a router — useful for matching before (or without) subscribing to url changes with `listen`, for example in server side rendering or tests.

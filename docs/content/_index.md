@@ -92,7 +92,8 @@ Create the router object.
 - `options` object
   - `mode` - one of `history`, `hash`, `memory`, default is `history`. `memory` is used automatically when there is no `window`, e.g. on the server
   - `qs` - a custom query string parser, an object of shape `{ parse, stringify }`
-  - `sync` - set to true to deliver url changes to the listener synchronously. By default changes are coalesced and delivered in a microtask, so rapid successive navigations produce a single listener call
+  - `sync` - set to true to deliver url changes to the listener synchronously. By default changes are coalesced and delivered in a microtask, so rapid successive navigations produce a single listener call. Shorthand for `schedule: (fire) => fire()`
+  - `schedule` - a function `(fire, info) => void` controlling how url changes are delivered to the listener. Call `fire()` to deliver the change — the scheduler must eventually call it, but may defer it however it likes, e.g. `(fire) => setTimeout(fire, 0)`. `info.traversal` is true when the change was triggered by a back/forward traversal (`popstate` or `hashchange`), false for programmatic navigations and the initial `listen` call. Calling a superseded `fire` is harmless — only the latest scheduled change is delivered, and it reads the url at fire time. Takes precedence over `sync` when both are set. Default: `(fire) => queueMicrotask(fire)`
 
 ### `listen`
 
@@ -242,6 +243,7 @@ A lower level building block that the router uses internally. It wraps the three
 - `options` object
   - `mode` - one of `history`, `hash`, `memory`, default is `history`. `memory` is used automatically when there is no `window`, e.g. on the server
   - `sync` - same as in `createRouter`
+  - `schedule` - same as in `createRouter`
 
 Returns an object with:
 

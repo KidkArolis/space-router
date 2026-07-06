@@ -3,7 +3,7 @@ export { createHistory } from './history.ts'
 export { createMatcher, createRouter, merge } from './router.ts'
 
 export type { Qs } from './qs.ts'
-export type { Mode, History, CreateHistoryOptions } from './history.ts'
+export type { Mode, History, CreateHistoryOptions, Schedule, ScheduleInfo } from './history.ts'
 export type {
   MatcherOptions,
   RouteData,

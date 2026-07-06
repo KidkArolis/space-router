@@ -231,6 +231,23 @@ test('coalesces rapid async navigations into a single emit', async (t) => {
   t.deepEqual(calls, ['/c'])
 })
 
+test('custom schedule controls when route changes are delivered', (t) => {
+  const calls: string[] = []
+  const fires: (() => void)[] = []
+  const router = createRouter({ mode: 'memory', schedule: (fire) => fires.push(fire) })
+  router.listen([{ path: '*' }], (route) => {
+    calls.push(route.url)
+  })
+
+  router.navigate('/a')
+  router.navigate('/b')
+  t.deepEqual(calls, [])
+
+  for (const fire of fires) fire()
+
+  t.deepEqual(calls, ['/b'])
+})
+
 function createTestRouter(cb, { withoutCatchAll = false } = {}) {
   const router = createRouter({ mode: 'memory', sync: true })
   const dispose = router.listen(

@@ -1,11 +1,12 @@
 import { matchOne, type MatchedRoute } from './match.ts'
-import { createHistory, type Mode } from './history.ts'
+import { createHistory, type Mode, type Schedule } from './history.ts'
 import { qs as defaultQs, type Qs } from './qs.ts'
 
 export interface RouterOptions {
   mode?: Mode
   qs?: Qs
   sync?: boolean
+  schedule?: Schedule
 }
 
 export interface MatcherOptions {
@@ -64,8 +65,7 @@ const MAX_REDIRECTS = 10
 export function createRouter<Data = Record<string, unknown>>(options: RouterOptions = {}): Router<Data> {
   const mode = options.mode || 'history'
   const qs = options.qs || defaultQs
-  const sync = options.sync || false
-  const history = createHistory({ mode, sync })
+  const history = createHistory({ mode, sync: options.sync, schedule: options.schedule })
 
   let matcher = createMatcher<Data>([], { qs })
 
