@@ -1,12 +1,3 @@
-export function match(routes, url, qs) {
-    if (!url)
-        return;
-    for (let i = 0; i < routes.length; i++) {
-        const m = matchOne(routes[i].pattern, url, qs);
-        if (m)
-            return m;
-    }
-}
 export function matchOne(pattern, url, qs) {
     if (!pattern)
         return;

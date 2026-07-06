@@ -24,10 +24,12 @@ export interface NavigateTarget {
 export type To = string | NavigateTarget;
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To);
 export type RouteData<Data = Record<string, unknown>> = Data & {
-    path?: string;
+    path: string;
     redirect?: Redirect<Data>;
 };
-export type RouteDefinition<Data = Record<string, unknown>> = RouteData<Data> & {
+export type RouteDefinition<Data = Record<string, unknown>> = Data & {
+    path?: string;
+    redirect?: Redirect<Data>;
     routes?: RouteDefinition<Data>[];
 };
 export interface Router<Data = Record<string, unknown>> {
@@ -38,7 +40,7 @@ export interface Router<Data = Record<string, unknown>> {
     getUrl(): string;
 }
 export interface Matcher<Data = Record<string, unknown>> {
-    match(url: string | undefined): Route<Data> | undefined;
+    match(url: string): Route<Data> | undefined;
 }
 interface FlatRoute<Data = Record<string, unknown>> {
     pattern: string;

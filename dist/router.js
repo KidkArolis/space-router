@@ -1,4 +1,4 @@
-import { match as findMatch } from "./match.js";
+import { matchOne } from "./match.js";
 import { createHistory } from "./history.js";
 import { qs as defaultQs } from "./qs.js";
 const PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g;
@@ -97,9 +97,13 @@ export function createMatcher(routeMap, options = {}) {
     const qs = options.qs || defaultQs;
     return {
         match(url) {
-            const route = findMatch(routes, url, qs);
-            if (route) {
-                return { ...route, data: data(routes, route) };
+            if (!url)
+                return undefined;
+            for (const route of routes) {
+                const m = matchOne(route.pattern, url, qs);
+                if (m) {
+                    return { ...m, data: route.data };
+                }
             }
             return undefined;
         },
@@ -122,14 +126,6 @@ export function flatten(routeMap) {
     }
     addLevel(routeMap);
     return routes;
-}
-function data(routes, matchingRoute) {
-    for (let i = 0; i < routes.length; i++) {
-        if (routes[i].pattern === matchingRoute.pattern) {
-            return routes[i].data;
-        }
-    }
-    return [];
 }
 export function merge(curr, to) {
     const c = (curr || {});

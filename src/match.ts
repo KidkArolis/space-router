@@ -10,18 +10,6 @@ export interface MatchedRoute {
   hash: string
 }
 
-interface RouteEntry {
-  pattern: string
-}
-
-export function match(routes: RouteEntry[], url: string | undefined, qs: Qs): MatchedRoute | undefined {
-  if (!url) return
-  for (let i = 0; i < routes.length; i++) {
-    const m = matchOne(routes[i].pattern, url, qs)
-    if (m) return m
-  }
-}
-
 export function matchOne(pattern: string, url: string, qs?: Qs): MatchedRoute | undefined {
   if (!pattern) return
 

@@ -119,7 +119,7 @@ Note, calling listen will immediately call `onChange` based on the current url w
 - `search` full unparsed query string
 - `hash` hash fragment
 - `pattern` the matched route pattern as defined in the route config
-- `data` an array of nested matched route objects with any metadata found in the route config
+- `data` an array of the matched route's metadata, one entry per nesting level. Each entry includes the `path` it was declared with along with any metadata you defined
 
 Listen returns a `dispose` function that stops listening to url changes.
 
@@ -173,6 +173,25 @@ const route = router.match(url)
 ```
 
 Match the url string against the routes and return the matching route object.
+
+Note, the router only knows your routes once `listen` has been called — before that, `match` returns `undefined`. To match urls without listening, use `createMatcher`.
+
+### `createMatcher`
+
+```js
+import { createMatcher } from 'space-router'
+
+const matcher = createMatcher(routes, options)
+const route = matcher.match('/user/7?tab=settings')
+```
+
+Create a standalone matcher without creating a router. Useful for matching urls before (or without) subscribing to url changes with `listen` — for example to compute the initial route synchronously during the first render, in server side rendering, or in tests.
+
+- `routes` - the same array of route definitions that `listen` accepts
+- `options` object
+  - `qs` - a custom query string parser, an object of shape `{ parse, stringify }`
+
+`matcher.match(url)` returns the same `route` object as described in [listen](#listen), or `undefined` if no route matched.
 
 ### `href`
 
