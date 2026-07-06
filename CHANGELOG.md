@@ -1,8 +1,7 @@
 ## 1.1.0
 
-- add `createMatcher(routes, options?)`, a pure route-map matcher for consumers that need to match a URL before subscribing to history with `listen`.
-- `createRouter()` now uses `createMatcher()` internally, keeping router matching and standalone matching on the same implementation path.
-- matched route `data` entries now preserve each segment's declared `path`, so consumers can distinguish route-definition patterns from the matched `pathname`.
+- add `createMatcher(routes, options?)` for matching urls against a route map without creating a router — useful for matching before (or without) subscribing to url changes with `listen`, for example in server side rendering or tests.
+- each entry in a matched route's `data` array now includes the `path` it was declared with.
 
 ## 1.0.0
 
