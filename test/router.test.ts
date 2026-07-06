@@ -1,5 +1,5 @@
 import test from 'ava'
-import { qs, createRouter } from '../src/index.ts'
+import { qs, createMatcher, createRouter } from '../src/index.ts'
 
 test('createRouter, listen, navigate and dispose', (t) => {
   const calls = []
@@ -90,11 +90,39 @@ test('.match(url)', (t) => {
     query: { a: '1' },
     search: '?a=1',
     hash: '#hello',
-    data: [{ datum: 'settings-data' }],
+    data: [{ path: '/user/:id/settings', datum: 'settings-data' }],
   }
   t.deepEqual(router.match('/user/7/settings?a=1#hello'), route)
 
   dispose()
+})
+
+test('createMatcher matches routes without history or listen', (t) => {
+  const matcher = createMatcher([
+    {
+      component: 'root',
+      routes: [
+        {
+          path: '/user/:id',
+          component: 'user',
+        },
+      ],
+    },
+  ])
+
+  t.deepEqual(matcher.match('/user/7'), {
+    url: '/user/7',
+    pattern: '/user/:id',
+    pathname: '/user/7',
+    params: { id: '7' },
+    query: {},
+    search: '',
+    hash: '',
+    data: [
+      { path: '', component: 'root' },
+      { path: '/user/:id', component: 'user' },
+    ],
+  })
 })
 
 test('.match(url) without catch all', (t) => {
