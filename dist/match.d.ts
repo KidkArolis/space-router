@@ -8,9 +8,4 @@ export interface MatchedRoute {
     search: string;
     hash: string;
 }
-interface RouteEntry {
-    pattern: string;
-}
-export declare function match(routes: RouteEntry[], url: string | undefined, qs: Qs): MatchedRoute | undefined;
 export declare function matchOne(pattern: string, url: string, qs?: Qs): MatchedRoute | undefined;
-export {};

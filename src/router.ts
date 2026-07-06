@@ -1,4 +1,4 @@
-import { match as findMatch, type MatchedRoute } from './match.ts'
+import { matchOne, type MatchedRoute } from './match.ts'
 import { createHistory, type Mode } from './history.ts'
 import { qs as defaultQs, type Qs } from './qs.ts'
 
@@ -31,11 +31,13 @@ export type To = string | NavigateTarget
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To)
 
 export type RouteData<Data = Record<string, unknown>> = Data & {
-  path?: string
+  path: string
   redirect?: Redirect<Data>
 }
 
-export type RouteDefinition<Data = Record<string, unknown>> = RouteData<Data> & {
+export type RouteDefinition<Data = Record<string, unknown>> = Data & {
+  path?: string
+  redirect?: Redirect<Data>
   routes?: RouteDefinition<Data>[]
 }
 
@@ -48,7 +50,7 @@ export interface Router<Data = Record<string, unknown>> {
 }
 
 export interface Matcher<Data = Record<string, unknown>> {
-  match(url: string | undefined): Route<Data> | undefined
+  match(url: string): Route<Data> | undefined
 }
 
 interface FlatRoute<Data = Record<string, unknown>> {
@@ -77,7 +79,7 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
           redirects = 0
           return
         }
-        for (const r of route.data as Array<{ redirect?: Redirect<Data> }>) {
+        for (const r of route.data) {
           if (r.redirect) {
             if (++redirects > MAX_REDIRECTS) {
               redirects = 0
@@ -169,9 +171,12 @@ export function createMatcher<Data = Record<string, unknown>>(
 
   return {
     match(url) {
-      const route = findMatch(routes, url, qs)
-      if (route) {
-        return { ...route, data: data(routes, route) } as Route<Data>
+      if (!url) return undefined
+      for (const route of routes) {
+        const m = matchOne(route.pattern, url, qs)
+        if (m) {
+          return { ...m, data: route.data } as Route<Data>
+        }
       }
       return undefined
     },
@@ -202,15 +207,6 @@ export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinitio
   }
   addLevel(routeMap)
   return routes
-}
-
-function data<Data = Record<string, unknown>>(routes: FlatRoute<Data>[], matchingRoute: { pattern: string }) {
-  for (let i = 0; i < routes.length; i++) {
-    if (routes[i].pattern === matchingRoute.pattern) {
-      return routes[i].data
-    }
-  }
-  return []
 }
 
 export function merge(curr: Partial<Route> | NavigateTarget | undefined, to: NavigateTarget): NavigateTarget {
