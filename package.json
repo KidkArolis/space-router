@@ -47,16 +47,16 @@
     "release:docs": "hugo -s docs && gh-pages -d docs/public"
   },
   "devDependencies": {
-    "ava": "^7.0.0",
+    "ava": "^8.0.1",
     "c8": "^11.0.0",
     "gh-pages": "^6.3.0",
-    "oxfmt": "^0.46.0",
-    "oxlint": "^1.61.0",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.72.0",
     "typescript": "^6.0.3"
   },
   "ava": {
-    "extensions": {
-      "ts": "module"
-    }
+    "extensions": [
+      "ts"
+    ]
   }
 }
