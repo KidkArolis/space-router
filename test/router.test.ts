@@ -231,6 +231,57 @@ test('coalesces rapid async navigations into a single emit', async (t) => {
   t.deepEqual(calls, ['/c'])
 })
 
+test('replaceUrl updates the url without emitting a route change', async (t) => {
+  const calls: string[] = []
+  const router = createRouter({ mode: 'memory' })
+  router.listen([{ path: '*' }], (route) => calls.push(route.url))
+
+  router.navigate('/a')
+  await Promise.resolve()
+  t.deepEqual(calls, ['/a'])
+
+  router.replaceUrl('/b')
+  t.is(router.getUrl(), '/b', 'visible synchronously')
+
+  // flush microtasks and a macrotask to prove no emit was scheduled
+  await new Promise((resolve) => setTimeout(resolve))
+  t.deepEqual(calls, ['/a'])
+})
+
+test('replaceUrl before any navigation creates the first entry', (t) => {
+  const router = createRouter({ mode: 'memory', sync: true })
+  router.replaceUrl('/b')
+  t.is(router.getUrl(), '/b')
+})
+
+test('replaceUrl normalizes urls like navigate', (t) => {
+  const router = createRouter({ mode: 'memory', sync: true })
+  router.replaceUrl('#/b/')
+  t.is(router.getUrl(), '/b')
+  router.replaceUrl('b')
+  t.is(router.getUrl(), '/b')
+  router.replaceUrl('')
+  t.is(router.getUrl(), '/')
+})
+
+test('a pending navigate emit observes a subsequent replaceUrl', async (t) => {
+  const calls: string[] = []
+  const router = createRouter({ mode: 'memory' })
+  router.listen([{ path: '*' }], (route) => calls.push(route.url))
+
+  router.navigate('/a')
+  router.replaceUrl('/b')
+
+  await Promise.resolve()
+  t.deepEqual(calls, ['/b'])
+})
+
+test('replaceUrl before listen does not throw', (t) => {
+  const router = createRouter({ mode: 'memory', sync: true })
+  t.notThrows(() => router.replaceUrl('/foo'))
+  t.is(router.getUrl(), '/foo')
+})
+
 test('custom schedule controls when route changes are delivered', (t) => {
   const calls: string[] = []
   const fires: (() => void)[] = []

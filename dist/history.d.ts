@@ -4,6 +4,7 @@ export interface History {
     getUrl(): string;
     push(url: string): void;
     replace(url: string): void;
+    replaceSilent(url: string): void;
 }
 export interface ScheduleInfo {
     traversal: boolean;

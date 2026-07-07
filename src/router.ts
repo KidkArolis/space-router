@@ -48,6 +48,13 @@ export interface Router<Data = Record<string, unknown>> {
   href(to: To, curr?: Route<Data>): string
   match(url: string): Route<Data> | undefined
   getUrl(): string
+  /**
+   * Replace the current history entry with `url`, using mode-appropriate
+   * mechanics, WITHOUT emitting a route change. For callers that have
+   * already committed a route and only need the address bar to agree —
+   * e.g. after a pre-commit transform rewrote the URL.
+   */
+  replaceUrl(url: string): void
 }
 
 export interface Matcher<Data = Record<string, unknown>> {
@@ -156,6 +163,10 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
 
     getUrl() {
       return history.getUrl()
+    },
+
+    replaceUrl(url) {
+      history.replaceSilent(url)
     },
   }
 

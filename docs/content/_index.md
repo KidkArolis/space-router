@@ -226,6 +226,14 @@ Get the current url string. Note, this only includes the path and does not inclu
 
 You shouldn't need to read this most of the time since the updates to url changes and the matching route will be provided in the `listen` callback. Be especially careful if you're performing asynchronous logic in your callback, such as lazily importing some modules, where you're then constructing links based on the current url - use route provided to your listener instead of calling `getUrl` as the url might already have been updated to another value in the meantime.
 
+### `replaceUrl`
+
+```js
+router.replaceUrl('/shows?sort=top-rated')
+```
+
+Replace the current history entry with the given url, using mode-appropriate mechanics, without emitting a route change. Unlike `navigate({ url, replace: true })`, the `listen` callback will not be called. This is for callers that have already committed a route and only need the address bar to agree — e.g. after a pre-commit transform rewrote the URL. The url is normalized the same way as in `navigate`, so `getUrl` will return exactly what a `navigate` to the same target would have produced.
+
 ### `createHistory`
 
 ```js
@@ -251,3 +259,4 @@ Returns an object with:
 - `getUrl()` - the current url string
 - `push(url)` - navigate, pushing a new entry onto the navigation stack
 - `replace(url)` - navigate, replacing the current entry
+- `replaceSilent(url)` - replace the current entry without emitting a url change, backs `router.replaceUrl`

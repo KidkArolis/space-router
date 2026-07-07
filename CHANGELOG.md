@@ -1,3 +1,7 @@
+## 1.3.0
+
+- add `router.replaceUrl(url)` — replace the current history entry with a url, using mode-appropriate mechanics, without emitting a route change. For callers that have already committed a route and only need the address bar to agree, e.g. after a pre-commit transform rewrote the url. Backed by a new `history.replaceSilent(url)` on `createHistory`.
+
 ## 1.2.0
 
 - add a `schedule(fire, info)` option to `createRouter` and `createHistory` for controlling how url changes are delivered to the listener. `info.traversal` is true for back/forward traversals (`popstate`/`hashchange`), false for programmatic navigations and the initial `listen` call. `sync: true` is now shorthand for the immediate scheduler `(fire) => fire()`; an explicit `schedule` takes precedence.

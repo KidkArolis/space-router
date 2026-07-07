@@ -69,7 +69,14 @@ function withFakeHashDom(fn) {
       }
     },
   }
-  globalThis.history = { pushState() {}, replaceState() {} }
+  globalThis.history = {
+    pushState() {},
+    // a bare fragment url replaces the hash without firing hashchange,
+    // mirroring real browser behavior
+    replaceState(_state, _title, url) {
+      if (url.startsWith('#')) hash = url
+    },
+  }
   // simulates a browser back/forward traversal on a hash url
   function back(target) {
     hash = target
@@ -279,6 +286,45 @@ test('explicit schedule takes precedence over sync', (t) => {
   h.push('/a')
   t.deepEqual(seen, [false])
   t.deepEqual(calls, ['/a'])
+})
+
+test.serial('replaceSilent in history mode updates the url without scheduling an emit', (t) => {
+  const calls = []
+  const fires = []
+  withFakeHistoryDom(() => {
+    const h = createHistory({ mode: 'history', schedule: (fire) => fires.push(fire) })
+    h.listen((url) => calls.push(url))
+    for (const fire of fires.splice(0)) fire() // flush the initial emit
+    h.replaceSilent('/b?x=1')
+    t.is(h.getUrl(), '/b?x=1')
+    t.deepEqual(fires, [], 'no emit was scheduled')
+  })
+  t.deepEqual(calls, ['/'])
+})
+
+test.serial('replaceSilent in hash mode rewrites only the fragment without emitting', (t) => {
+  const calls = []
+  withFakeHashDom(() => {
+    const h = createHistory({ mode: 'hash', sync: true })
+    h.listen((url) => calls.push(url))
+    h.push('/a')
+    calls.length = 0
+    h.replaceSilent('/b?x=1')
+    t.is(location.hash, '#/b?x=1')
+    t.is(location.pathname + location.search, '/', 'path and search untouched')
+    t.is(h.getUrl(), '/b?x=1')
+  })
+  t.deepEqual(calls, [], 'no hashchange fired, no emit scheduled')
+})
+
+test.serial('replaceSilent before listen is reflected by the initial emit', (t) => {
+  const calls = []
+  withFakeHistoryDom(() => {
+    const h = createHistory({ mode: 'history', sync: true })
+    h.replaceSilent('/b')
+    h.listen((url) => calls.push(url))
+  })
+  t.deepEqual(calls, ['/b'])
 })
 
 test('memory mode never schedules a traversal emit', (t) => {

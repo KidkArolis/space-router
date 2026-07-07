@@ -46,8 +46,11 @@ export function createHistory(options = {}) {
                 off();
         };
     }
+    function normalize(url) {
+        return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
+    }
     function go(url, replace) {
-        url = url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
+        url = normalize(url);
         if (mode === 'history') {
             history[replace ? 'replaceState' : 'pushState']({}, '', url);
             scheduleEmit(false);
@@ -90,6 +93,29 @@ export function createHistory(options = {}) {
     function getHash() {
         return location.hash.slice(1);
     }
+    // replace the current entry without emitting — for callers that have
+    // already committed a route and only need the url to agree. replaceState
+    // fires no popstate/hashchange, so no emit needs suppressing; in hash mode
+    // this is also why we can't reuse go()'s location.replace path, which does
+    // fire hashchange and would emit.
+    function replaceSilent(url) {
+        url = normalize(url);
+        if (mode === 'history') {
+            history.replaceState({}, '', url);
+        }
+        else if (mode === 'hash') {
+            // a bare fragment url leaves the page's pathname and search untouched
+            history.replaceState({}, '', '#' + url);
+        }
+        else if (mode === 'memory') {
+            if (memory.length) {
+                memory[memory.length - 1] = url;
+            }
+            else {
+                memory.push(url);
+            }
+        }
+    }
     return {
         listen,
         getUrl,
@@ -99,6 +125,7 @@ export function createHistory(options = {}) {
         replace(url) {
             go(url, true);
         },
+        replaceSilent,
     };
 }
 function on(el, type, fn) {

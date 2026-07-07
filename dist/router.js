@@ -88,6 +88,9 @@ export function createRouter(options = {}) {
         getUrl() {
             return history.getUrl();
         },
+        replaceUrl(url) {
+            history.replaceSilent(url);
+        },
     };
     return router;
 }
