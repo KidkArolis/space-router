@@ -20,10 +20,15 @@ export interface CreateHistoryOptions {
   schedule?: Schedule
 }
 
+interface Subscription {
+  listener: (url: string) => void
+  off?: () => void
+}
+
 export function createHistory(options: CreateHistoryOptions = {}): History {
   const schedule: Schedule = options.schedule || (options.sync ? (fire) => fire() : (fire) => queueMicrotask(fire))
   let mode: Mode = options.mode || 'history'
-  let listener: ((url: string) => void) | null = null
+  let active: Subscription | undefined
   let seq = 0
   let selfNavs = 0
 
@@ -34,7 +39,7 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
   }
 
   function emit() {
-    if (listener) listener(getUrl())
+    active?.listener(getUrl())
   }
 
   // each scheduled fire captures its seq: superseded fires no-op, and the
@@ -60,17 +65,29 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
   }
 
   function listen(onChange: (url: string) => void) {
-    if (listener) throw new Error('Already listening')
-    listener = onChange
-    let off: (() => void) | undefined
-    if (mode !== 'memory') {
-      off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onTraversal)
-      scheduleEmit(false)
+    if (active) throw new Error('Already listening')
+
+    const subscription: Subscription = { listener: onChange }
+    active = subscription
+
+    const dispose = () => {
+      if (active !== subscription) return
+      active = undefined
+      seq++
+      subscription.off?.()
     }
-    return () => {
-      listener = null
-      if (off) off()
+
+    try {
+      if (mode !== 'memory') {
+        subscription.off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onTraversal)
+        scheduleEmit(false)
+      }
+    } catch (error) {
+      dispose()
+      throw error
     }
+
+    return dispose
   }
 
   function normalize(url: string) {

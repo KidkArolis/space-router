@@ -37,7 +37,8 @@
   },
   "author": "Karolis Narkevicius",
   "scripts": {
-    "test": "npm run build && oxlint -c oxlintrc.json && oxfmt --check '**/*.{ts,js,css,yml}' && c8 ava",
+    "test": "npm run typecheck && npm run build && oxlint -c oxlintrc.json && oxfmt --check '**/*.{ts,js,css,yml}' && c8 ava",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "oxfmt --write '**/*.{ts,js,css,yml}'",
     "coverage": "c8 --reporter=html ava",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",

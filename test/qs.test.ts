@@ -21,6 +21,11 @@ test('qs.parse handles empty pairs', (t) => {
   t.deepEqual(qs.parse('a=1&&b=2'), { a: '1', b: '2' })
 })
 
+test('qs.parse falls back to raw values on malformed percent-encoding instead of throwing', (t) => {
+  t.deepEqual(qs.parse('a=%zz'), { a: '%zz' })
+  t.deepEqual(qs.parse('%zz=1'), { '%zz': '1' })
+})
+
 test('qs.stringify encodes the key', (t) => {
   t.is(qs.stringify({ 'foo bar': 1 }), 'foo%20bar=1')
 })

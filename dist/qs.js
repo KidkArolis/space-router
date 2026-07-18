@@ -15,13 +15,21 @@ export const qs = {
             .reduce((acc, key) => {
             const value = query[key];
             if (value !== undefined) {
-                acc.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+                acc.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(value)));
             }
             return acc;
         }, [])
             .join('&');
     },
 };
+// malformed percent-encoding (e.g. '%zz' typed into the address bar) must
+// not crash the router — fall back to the raw value
 function decode(s) {
-    return decodeURIComponent(s.replace(/\+/g, ' '));
+    const raw = s.replace(/\+/g, ' ');
+    try {
+        return decodeURIComponent(raw);
+    }
+    catch {
+        return raw;
+    }
 }

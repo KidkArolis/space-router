@@ -30,9 +30,9 @@ export function matchOne(pattern, url, qs) {
                 const val = urlSegs[i] || '';
                 if (!val && !star && (flags.indexOf('?') < 0 || plus))
                     return;
-                params[param] = decodeURIComponent(val);
+                params[param] = decode(val);
                 if (plus || star) {
-                    params[param] = urlSegs.slice(i).map(decodeURIComponent).join('/');
+                    params[param] = urlSegs.slice(i).map(decode).join('/');
                     break;
                 }
             }
@@ -50,6 +50,16 @@ export function matchOne(pattern, url, qs) {
         search,
         hash,
     };
+}
+// malformed percent-encoding (e.g. '%zz' typed into the address bar) must
+// not crash the router — fall back to the raw segment
+function decode(s) {
+    try {
+        return decodeURIComponent(s);
+    }
+    catch {
+        return s;
+    }
 }
 function segmentize(url) {
     return strip(url).split('/');

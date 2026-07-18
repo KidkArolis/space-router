@@ -141,7 +141,7 @@ Param values in matched URLs are decoded with `decodeURIComponent`. When you bui
 
 ```js
 router.navigate(to)
-router.navigate(to, curr)
+router.navigate(to, from)
 
 // examples
 router.navigate('/shows')
@@ -162,11 +162,11 @@ Navigate to a url. Navigating will update the browser's location bar (unless in 
   - `hash` the hash fragment to append to the url. Set to `null` (with `merge`) to clear the hash
   - `replace` set to true to replace the current entry in the navigation stack instead of pushing
   - `merge` set to true to merge in the params, query and hash from the current url
-- `curr` - optional current route object to merge against, instead of reading the current url. Useful in async callbacks where the current url may have moved on by the time you navigate
+- `from` - optional route, partial route, or navigation target to merge against instead of reading the current url — where you're navigating from. Useful in async callbacks where the current url may have moved on by the time you navigate
 
 Note, if `url` option is provided, the `pathname`, `params`, `query` and `hash` will be ignored.
 
-Note, be careful when using `merge` without passing `curr` — it reads the location's current url, which might differ from the one you store in your application's state if you're performing async logic in the listen callback.
+Note, be careful when using `merge` without passing `from` — it reads the location's current url, which might differ from the one you store in your application's state if you're performing async logic in the listen callback.
 
 ### `match`
 
@@ -199,7 +199,7 @@ Create a standalone matcher without creating a router. Useful for matching urls 
 
 ```js
 const url = router.href(to)
-const url = router.href(to, curr)
+const url = router.href(to, from)
 
 // examples
 router.href('/shows')
@@ -212,7 +212,7 @@ router.href({ query: { 'top-rated': undefined }, merge: true })
 Create a relative url string to use in `<a href>` attribute. Param values are URL-encoded so the resulting string round-trips through `match`.
 
 - `to` object of shape `{ pathname, params, query, hash }`. The `params` will be interpolated into the pathname if the pathname contains any parametrised segments. The `query` is an object that will be passed through `qs.stringify`.
-- `curr` - optional current route to merge against when `to.merge` is set, mirroring `navigate(to, curr)`.
+- `from` - optional route, partial route, or navigation target to merge against when `to.merge` is set, mirroring `navigate(to, from)`.
 
 Note: `to` can be a string, in which case `href` simply returns the input. Similarly, the `to` can contain a `{ url }` key in which case `href` returns that url. This is to align the function signature with that of `navigate` so the two can be used interchangeably.
 

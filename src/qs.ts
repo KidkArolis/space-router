@@ -20,7 +20,7 @@ export const qs: Qs = {
       .reduce<string[]>((acc, key) => {
         const value = query[key]
         if (value !== undefined) {
-          acc.push(encodeURIComponent(key) + '=' + encodeURIComponent(value as string | number | boolean))
+          acc.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(value)))
         }
         return acc
       }, [])
@@ -28,6 +28,13 @@ export const qs: Qs = {
   },
 }
 
+// malformed percent-encoding (e.g. '%zz' typed into the address bar) must
+// not crash the router — fall back to the raw value
 function decode(s: string): string {
-  return decodeURIComponent(s.replace(/\+/g, ' '))
+  const raw = s.replace(/\+/g, ' ')
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
 }

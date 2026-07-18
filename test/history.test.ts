@@ -1,53 +1,81 @@
 import test from 'ava'
 import { createHistory } from '../src/history.ts'
 
-// history.ts looks for `typeof window === 'undefined'` to pick memory vs browser
-// mode. To exercise the browser-mode paths we briefly stand up a tiny DOM-ish
-// global. We run serially so the globals don't leak across tests.
-function withFakeDom(href, fn) {
-  const previous = {
-    window: globalThis.window,
-    location: globalThis.location,
-    history: globalThis.history,
-    requestAnimationFrame: globalThis.requestAnimationFrame,
+type BrowserGlobal = 'window' | 'location' | 'history'
+type BrowserEvent = 'hashchange' | 'popstate'
+type EventHandler = () => void
+
+interface TraversalControls {
+  back(url: string): void
+}
+
+function withBrowserGlobals<Result>(replacements: Record<BrowserGlobal, unknown>, fn: () => Result): Result {
+  const names: BrowserGlobal[] = ['window', 'location', 'history']
+  const previous = new Map<BrowserGlobal, PropertyDescriptor | undefined>()
+
+  for (const name of names) {
+    previous.set(name, Object.getOwnPropertyDescriptor(globalThis, name))
+    Object.defineProperty(globalThis, name, {
+      configurable: true,
+      writable: true,
+      value: replacements[name],
+    })
   }
-  const url = new URL(href)
-  globalThis.window = { addEventListener() {}, removeEventListener() {} }
-  globalThis.location = { href, pathname: url.pathname, search: url.search, hash: url.hash }
-  globalThis.history = { pushState() {}, replaceState() {} }
-  globalThis.requestAnimationFrame = (cb) => cb()
+
   try {
     return fn()
   } finally {
-    globalThis.window = previous.window
-    globalThis.location = previous.location
-    globalThis.history = previous.history
-    globalThis.requestAnimationFrame = previous.requestAnimationFrame
+    for (const name of names) {
+      const descriptor = previous.get(name)
+      if (descriptor) {
+        Object.defineProperty(globalThis, name, descriptor)
+      } else {
+        Reflect.deleteProperty(globalThis, name)
+      }
+    }
   }
+}
+
+function createFakeWindow() {
+  const handlers: Record<BrowserEvent, EventHandler[]> = { hashchange: [], popstate: [] }
+  return {
+    window: {
+      addEventListener(type: BrowserEvent, fn: EventHandler) {
+        handlers[type].push(fn)
+      },
+      removeEventListener(type: BrowserEvent, fn: EventHandler) {
+        const index = handlers[type].indexOf(fn)
+        if (index >= 0) handlers[type].splice(index, 1)
+      },
+    },
+    fire(type: BrowserEvent) {
+      for (const handler of handlers[type]) handler()
+    },
+  }
+}
+
+// history.ts looks for `typeof window === 'undefined'` to pick memory vs browser
+// mode. To exercise the browser-mode paths we briefly stand up a tiny DOM-ish
+// global. We run serially so the globals don't leak across tests.
+function withFakeDom<Result>(href: string, fn: () => Result): Result {
+  const url = new URL(href)
+  return withBrowserGlobals(
+    {
+      window: createFakeWindow().window,
+      location: { href, pathname: url.pathname, search: url.search, hash: url.hash },
+      history: { pushState() {}, replaceState() {} },
+    },
+    fn,
+  )
 }
 
 // Richer fake DOM for hash-mode tests: addEventListener actually wires up
 // listeners, and location.assign/replace fire hashchange iff the hash changes
 // (mirroring real browser behavior).
-function withFakeHashDom(fn) {
-  const previous = {
-    window: globalThis.window,
-    location: globalThis.location,
-    history: globalThis.history,
-  }
+function withFakeHashDom<Result>(fn: (controls: TraversalControls) => Result): Result {
   let hash = ''
-  const handlers = {}
-  globalThis.window = {
-    addEventListener(type, fn) {
-      ;(handlers[type] ||= []).push(fn)
-    },
-    removeEventListener(type, fn) {
-      const list = handlers[type] || []
-      const i = list.indexOf(fn)
-      if (i >= 0) list.splice(i, 1)
-    },
-  }
-  globalThis.location = {
+  const { window, fire } = createFakeWindow()
+  const location = {
     get href() {
       return 'http://x.com/' + hash
     },
@@ -56,63 +84,44 @@ function withFakeHashDom(fn) {
     },
     pathname: '/',
     search: '',
-    assign(target) {
+    assign(target: string) {
       if (target !== hash) {
         hash = target
-        for (const f of handlers.hashchange || []) f()
+        fire('hashchange')
       }
     },
-    replace(target) {
+    replace(target: string) {
       if (target !== hash) {
         hash = target
-        for (const f of handlers.hashchange || []) f()
+        fire('hashchange')
       }
     },
   }
-  globalThis.history = {
+  const history = {
     pushState() {},
     // a bare fragment url replaces the hash without firing hashchange,
     // mirroring real browser behavior
-    replaceState(_state, _title, url) {
+    replaceState(_state: unknown, _title: string, url: string) {
       if (url.startsWith('#')) hash = url
     },
   }
+
   // simulates a browser back/forward traversal on a hash url
-  function back(target) {
+  function back(target: string) {
     hash = target
-    for (const f of handlers.hashchange || []) f()
+    fire('hashchange')
   }
-  try {
-    return fn({ back })
-  } finally {
-    globalThis.window = previous.window
-    globalThis.location = previous.location
-    globalThis.history = previous.history
-  }
+
+  return withBrowserGlobals({ window, location, history }, () => fn({ back }))
 }
 
 // Fake DOM for history-mode scheduling tests: addEventListener is wired up,
 // pushState/replaceState update the url silently (as in real browsers), and
 // back() simulates a browser traversal by updating the url and firing popstate.
-function withFakeHistoryDom(fn) {
-  const previous = {
-    window: globalThis.window,
-    location: globalThis.location,
-    history: globalThis.history,
-  }
+function withFakeHistoryDom<Result>(fn: (controls: TraversalControls) => Result): Result {
   let current = '/'
-  const handlers = {}
-  globalThis.window = {
-    addEventListener(type, fn) {
-      ;(handlers[type] ||= []).push(fn)
-    },
-    removeEventListener(type, fn) {
-      const list = handlers[type] || []
-      const i = list.indexOf(fn)
-      if (i >= 0) list.splice(i, 1)
-    },
-  }
-  globalThis.location = {
+  const { window, fire } = createFakeWindow()
+  const location = {
     get pathname() {
       return current.split(/[?#]/)[0]
     },
@@ -125,25 +134,21 @@ function withFakeHistoryDom(fn) {
       return i >= 0 ? current.slice(i) : ''
     },
   }
-  globalThis.history = {
-    pushState(_state, _title, url) {
+  const history = {
+    pushState(_state: unknown, _title: string, url: string) {
       current = url
     },
-    replaceState(_state, _title, url) {
+    replaceState(_state: unknown, _title: string, url: string) {
       current = url
     },
   }
-  function back(url) {
+
+  function back(url: string) {
     current = url
-    for (const f of handlers.popstate || []) f()
+    fire('popstate')
   }
-  try {
-    return fn({ back })
-  } finally {
-    globalThis.window = previous.window
-    globalThis.location = previous.location
-    globalThis.history = previous.history
-  }
+
+  return withBrowserGlobals({ window, location, history }, () => fn({ back }))
 }
 
 test.serial('getUrl in history mode preserves a # inside the hash fragment', (t) => {
@@ -173,8 +178,57 @@ test('memory mode replace before any push creates the first entry', (t) => {
   t.is(h.getUrl(), '/bar')
 })
 
+test('an old disposer cannot remove a newer listener', (t) => {
+  const calls: string[] = []
+  const h = createHistory({ mode: 'memory', sync: true })
+  const disposeFirst = h.listen((url) => calls.push('first:' + url))
+
+  disposeFirst()
+  const disposeSecond = h.listen((url) => calls.push('second:' + url))
+  disposeFirst()
+  h.push('/a')
+
+  t.deepEqual(calls, ['second:/a'])
+  disposeSecond()
+})
+
+test('disposing invalidates pending delivery before a new listener attaches', async (t) => {
+  const calls: string[] = []
+  const h = createHistory({ mode: 'memory' })
+  const disposeFirst = h.listen((url) => calls.push('first:' + url))
+
+  h.push('/a')
+  disposeFirst()
+  const disposeSecond = h.listen((url) => calls.push('second:' + url))
+  await Promise.resolve()
+
+  t.deepEqual(calls, [])
+  h.push('/b')
+  await Promise.resolve()
+  t.deepEqual(calls, ['second:/b'])
+  disposeSecond()
+})
+
+test.serial('a throwing initial listener does not poison future subscriptions', (t) => {
+  withFakeHistoryDom(() => {
+    const h = createHistory({ mode: 'history', sync: true })
+    t.throws(
+      () =>
+        h.listen(() => {
+          throw new Error('initial listener failed')
+        }),
+      { message: 'initial listener failed' },
+    )
+
+    const calls: string[] = []
+    const dispose = h.listen((url) => calls.push(url))
+    t.deepEqual(calls, ['/'])
+    dispose()
+  })
+})
+
 test.serial('hash mode emits when navigating to the current URL', (t) => {
-  const calls = []
+  const calls: string[] = []
   withFakeHashDom(() => {
     const h = createHistory({ mode: 'hash', sync: true })
     h.listen((url) => calls.push(url))
@@ -185,8 +239,8 @@ test.serial('hash mode emits when navigating to the current URL', (t) => {
 })
 
 test.serial('history mode scheduler receives traversal true only for popstate', (t) => {
-  const seen = []
-  const calls = []
+  const seen: boolean[] = []
+  const calls: string[] = []
   withFakeHistoryDom(({ back }) => {
     const h = createHistory({
       mode: 'history',
@@ -205,8 +259,8 @@ test.serial('history mode scheduler receives traversal true only for popstate', 
 })
 
 test.serial('hash mode scheduler receives traversal false for own push, true for external hashchange', (t) => {
-  const seen = []
-  const calls = []
+  const seen: boolean[] = []
+  const calls: string[] = []
   withFakeHashDom(({ back }) => {
     const h = createHistory({
       mode: 'hash',
@@ -225,9 +279,9 @@ test.serial('hash mode scheduler receives traversal false for own push, true for
 })
 
 test.serial('a push racing a deferred traversal emit results in a single emit of the final url', (t) => {
-  const calls = []
+  const calls: string[] = []
   withFakeHistoryDom(({ back }) => {
-    const deferred = []
+    const deferred: (() => void)[] = []
     const h = createHistory({
       mode: 'history',
       schedule: (fire, { traversal }) => (traversal ? deferred.push(fire) : fire()),
@@ -244,9 +298,9 @@ test.serial('a push racing a deferred traversal emit results in a single emit of
 })
 
 test.serial('a deferred traversal emit fires with the current url when not superseded', (t) => {
-  const calls = []
+  const calls: string[] = []
   withFakeHistoryDom(({ back }) => {
-    const deferred = []
+    const deferred: (() => void)[] = []
     const h = createHistory({
       mode: 'history',
       schedule: (fire, { traversal }) => (traversal ? deferred.push(fire) : fire()),
@@ -260,7 +314,7 @@ test.serial('a deferred traversal emit fires with the current url when not super
 })
 
 test('a burst of pushes coalesces into a single emit with the default scheduler', async (t) => {
-  const calls = []
+  const calls: string[] = []
   const h = createHistory({ mode: 'memory' })
   h.listen((url) => calls.push(url))
   h.push('/a')
@@ -272,8 +326,8 @@ test('a burst of pushes coalesces into a single emit with the default scheduler'
 })
 
 test('explicit schedule takes precedence over sync', (t) => {
-  const seen = []
-  const calls = []
+  const seen: boolean[] = []
+  const calls: string[] = []
   const h = createHistory({
     mode: 'memory',
     sync: true,
@@ -289,8 +343,8 @@ test('explicit schedule takes precedence over sync', (t) => {
 })
 
 test.serial('replaceSilent in history mode updates the url without scheduling an emit', (t) => {
-  const calls = []
-  const fires = []
+  const calls: string[] = []
+  const fires: (() => void)[] = []
   withFakeHistoryDom(() => {
     const h = createHistory({ mode: 'history', schedule: (fire) => fires.push(fire) })
     h.listen((url) => calls.push(url))
@@ -303,7 +357,7 @@ test.serial('replaceSilent in history mode updates the url without scheduling an
 })
 
 test.serial('replaceSilent in hash mode rewrites only the fragment without emitting', (t) => {
-  const calls = []
+  const calls: string[] = []
   withFakeHashDom(() => {
     const h = createHistory({ mode: 'hash', sync: true })
     h.listen((url) => calls.push(url))
@@ -318,7 +372,7 @@ test.serial('replaceSilent in hash mode rewrites only the fragment without emitt
 })
 
 test.serial('replaceSilent before listen is reflected by the initial emit', (t) => {
-  const calls = []
+  const calls: string[] = []
   withFakeHistoryDom(() => {
     const h = createHistory({ mode: 'history', sync: true })
     h.replaceSilent('/b')
@@ -328,7 +382,7 @@ test.serial('replaceSilent before listen is reflected by the initial emit', (t) 
 })
 
 test('memory mode never schedules a traversal emit', (t) => {
-  const seen = []
+  const seen: boolean[] = []
   const h = createHistory({
     mode: 'memory',
     schedule: (fire, { traversal }) => {

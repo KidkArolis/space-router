@@ -1,11 +1,24 @@
 import test from 'ava'
 import { qs, createMatcher, createRouter } from '../src/index.ts'
+import type { Route, RouteDefinition, Router } from '../src/index.ts'
+
+interface TestRouteData {
+  component?: string
+  datum?: string
+  render?: (params: Record<string, string>, query: Record<string, string>, hash?: string) => string
+}
+
+interface TestRouterOptions {
+  withoutCatchAll?: boolean
+}
+
+type RouteChange = (route: Route<TestRouteData>) => void
 
 test('createRouter, listen, navigate and dispose', (t) => {
-  const calls = []
+  const calls: string[] = []
 
   const { router, dispose } = createTestRouter((route) => {
-    calls.push(route.data[0].render(route.params, route.query, route.hash))
+    calls.push(renderRoute(route))
   })
 
   router.navigate({ url: '/foo' })
@@ -98,7 +111,7 @@ test('.match(url)', (t) => {
 })
 
 test('createMatcher matches routes without history or listen', (t) => {
-  const matcher = createMatcher([
+  const matcher = createMatcher<{ component: string }>([
     {
       component: 'root',
       routes: [
@@ -126,7 +139,7 @@ test('createMatcher matches routes without history or listen', (t) => {
 })
 
 test('.match(url) without catch all', (t) => {
-  const { router, dispose } = createTestRouter(null, { withoutCatchAll: true })
+  const { router, dispose } = createTestRouter(undefined, { withoutCatchAll: true })
 
   const route = router.match('/unknown')
   t.is(route, undefined)
@@ -142,10 +155,10 @@ test('.getUrl()', (t) => {
 })
 
 test('redirects', (t) => {
-  const calls = []
+  const calls: string[] = []
 
   const { router, dispose } = createTestRouter((route) => {
-    calls.push(route.data[0].render(route.params, route.query))
+    calls.push(renderRoute(route))
   })
 
   router.navigate('/redirect-via-obj-1')
@@ -165,7 +178,7 @@ test('href encodes params', (t) => {
   t.is(router.href({ pathname: '/user/:id', params: { id: 'a/b' } }), '/user/a%2Fb')
   t.is(router.href({ pathname: '/user/:id', params: { id: 'a b' } }), '/user/a%20b')
   t.is(router.href({ pathname: '/user/:id', params: { id: 'a?b' } }), '/user/a%3Fb')
-  t.is(router.match('/user/a%2Fb').params.id, 'a/b')
+  t.is(router.match('/user/a%2Fb')?.params.id, 'a/b')
 
   dispose()
 })
@@ -213,6 +226,20 @@ test('getUrl after dispose does not throw', (t) => {
   dispose()
   t.notThrows(() => router.getUrl())
   t.is(router.getUrl(), '/foo')
+})
+
+test('a rejected second listen leaves the active matcher and listener intact', (t) => {
+  const calls: string[] = []
+  const router = createRouter({ mode: 'memory', sync: true })
+  const dispose = router.listen([{ path: '/a' }], (route) => calls.push(route.url))
+
+  t.throws(() => router.listen([{ path: '/b' }], () => {}), { message: 'Already listening' })
+
+  router.navigate('/a')
+  t.deepEqual(calls, ['/a'])
+  t.truthy(router.match('/a'))
+  t.is(router.match('/b'), undefined)
+  dispose()
 })
 
 test('coalesces rapid async navigations into a single emit', async (t) => {
@@ -299,28 +326,39 @@ test('custom schedule controls when route changes are delivered', (t) => {
   t.deepEqual(calls, ['/b'])
 })
 
-function createTestRouter(cb, { withoutCatchAll = false } = {}) {
-  const router = createRouter({ mode: 'memory', sync: true })
-  const dispose = router.listen(
-    [
-      { path: '/foo', render: () => 'foo' },
-      { path: '/bar', render: () => 'bar' },
-      { path: '/redirect-via-obj-1', redirect: 'bar' },
-      { path: '/redirect-via-obj-2', redirect: { pathname: '/user/:id', params: { id: 1 } } },
-      { path: '/redirect-via-fn-1/:id', redirect: ({ params }) => ({ pathname: '/user/:id', params }) },
-      { path: '/redirect-via-fn-2/:id', redirect: () => ({ url: '/foo' }) },
-      {
-        path: '/user/:id',
-        render: (params, query, hash = '') => {
-          const q = query && Object.keys(query).length ? `?${qs.stringify(query)}` : ''
-          return 'user=' + params.id + q + hash
-        },
+function renderRoute(route: Route<TestRouteData>): string {
+  const render = route.data[0].render
+  if (!render) throw new Error(`Missing render metadata for ${route.pattern}`)
+  return render(route.params, route.query, route.hash)
+}
+
+function createTestRouter(
+  cb?: RouteChange,
+  { withoutCatchAll = false }: TestRouterOptions = {},
+): { router: Router<TestRouteData>; dispose: () => void } {
+  const router = createRouter<TestRouteData>({ mode: 'memory', sync: true })
+  const routes: RouteDefinition<TestRouteData>[] = [
+    { path: '/foo', render: () => 'foo' },
+    { path: '/bar', render: () => 'bar' },
+    { path: '/redirect-via-obj-1', redirect: 'bar' },
+    { path: '/redirect-via-obj-2', redirect: { pathname: '/user/:id', params: { id: 1 } } },
+    { path: '/redirect-via-fn-1/:id', redirect: ({ params }) => ({ pathname: '/user/:id', params }) },
+    { path: '/redirect-via-fn-2/:id', redirect: () => ({ url: '/foo' }) },
+    {
+      path: '/user/:id',
+      render: (params, query, hash = '') => {
+        const q = Object.keys(query).length ? `?${qs.stringify(query)}` : ''
+        return 'user=' + params.id + q + hash
       },
-      { path: '/user/:id/friends', render: (params) => 'friends=' + params.id },
-      { path: '/user/:id/settings', datum: 'settings-data' },
-      !withoutCatchAll && { path: '*', render: () => 'catchall' },
-    ].filter(Boolean),
-    cb,
-  )
+    },
+    { path: '/user/:id/friends', render: (params) => 'friends=' + params.id },
+    { path: '/user/:id/settings', datum: 'settings-data' },
+  ]
+
+  if (!withoutCatchAll) {
+    routes.push({ path: '*', render: () => 'catchall' })
+  }
+
+  const dispose = router.listen(routes, cb)
   return { router, dispose }
 }

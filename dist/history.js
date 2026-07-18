@@ -1,7 +1,7 @@
 export function createHistory(options = {}) {
     const schedule = options.schedule || (options.sync ? (fire) => fire() : (fire) => queueMicrotask(fire));
     let mode = options.mode || 'history';
-    let listener = null;
+    let active;
     let seq = 0;
     let selfNavs = 0;
     const memory = [];
@@ -9,8 +9,7 @@ export function createHistory(options = {}) {
         mode = 'memory';
     }
     function emit() {
-        if (listener)
-            listener(getUrl());
+        active?.listener(getUrl());
     }
     // each scheduled fire captures its seq: superseded fires no-op, and the
     // surviving one reads the url fresh in emit() — so racing schedules of any
@@ -32,19 +31,28 @@ export function createHistory(options = {}) {
         scheduleEmit(traversal);
     }
     function listen(onChange) {
-        if (listener)
+        if (active)
             throw new Error('Already listening');
-        listener = onChange;
-        let off;
-        if (mode !== 'memory') {
-            off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onTraversal);
-            scheduleEmit(false);
-        }
-        return () => {
-            listener = null;
-            if (off)
-                off();
+        const subscription = { listener: onChange };
+        active = subscription;
+        const dispose = () => {
+            if (active !== subscription)
+                return;
+            active = undefined;
+            seq++;
+            subscription.off?.();
         };
+        try {
+            if (mode !== 'memory') {
+                subscription.off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onTraversal);
+                scheduleEmit(false);
+            }
+        }
+        catch (error) {
+            dispose();
+            throw error;
+        }
+        return dispose;
     }
     function normalize(url) {
         return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';

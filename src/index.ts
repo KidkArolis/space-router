@@ -7,6 +7,7 @@ export type { Mode, History, CreateHistoryOptions, Schedule, ScheduleInfo } from
 export type {
   MatcherOptions,
   RouteData,
+  From,
   RouterOptions,
   Route,
   NavigateTarget,

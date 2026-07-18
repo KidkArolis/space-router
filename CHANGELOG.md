@@ -1,3 +1,9 @@
+## 1.4.0
+
+- `navigate(to, from)` and `href(to, from)` now correctly accept partial routes and navigation targets in their public TypeScript signatures (the new `From` type, pairing with `To`), matching their existing runtime behavior. The second argument was previously documented as `curr` — same position, same runtime behavior, clearer name.
+- history subscriptions now have identity-owned, idempotent disposers. A stale disposer cannot remove a newer listener, pending emissions are invalidated on disposal, failed initial delivery cleans up transactionally, and a rejected second router listener no longer replaces the active matcher.
+- malformed percent-encoding in a url (e.g. a hand-typed `/foo%zz`) no longer throws from `match` and `qs.parse` — the affected param or query value falls back to its raw, undecoded form.
+
 ## 1.3.0
 
 - add `router.replaceUrl(url)` — replace the current history entry with a url, using mode-appropriate mechanics, without emitting a route change. For callers that have already committed a route and only need the address bar to agree, e.g. after a pre-commit transform rewrote the url. Backed by a new `history.replaceSilent(url)` on `createHistory`.

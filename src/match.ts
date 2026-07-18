@@ -45,9 +45,9 @@ export function matchOne(pattern: string, url: string, qs?: Qs): MatchedRoute | 
         const val = urlSegs[i] || ''
         if (!val && !star && (flags.indexOf('?') < 0 || plus)) return
 
-        params[param] = decodeURIComponent(val)
+        params[param] = decode(val)
         if (plus || star) {
-          params[param] = urlSegs.slice(i).map(decodeURIComponent).join('/')
+          params[param] = urlSegs.slice(i).map(decode).join('/')
           break
         }
       } else if (ps !== urlSegs[i]) {
@@ -64,6 +64,16 @@ export function matchOne(pattern: string, url: string, qs?: Qs): MatchedRoute | 
     query,
     search,
     hash,
+  }
+}
+
+// malformed percent-encoding (e.g. '%zz' typed into the address bar) must
+// not crash the router — fall back to the raw segment
+function decode(s: string): string {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
   }
 }
 

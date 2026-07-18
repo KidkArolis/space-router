@@ -10,32 +10,42 @@ export function createRouter(options = {}) {
     let matcher = createMatcher([], { qs });
     const router = {
         listen(routeMap, cb) {
-            matcher = createMatcher(routeMap, { qs });
+            const previousMatcher = matcher;
+            const nextMatcher = createMatcher(routeMap, { qs });
             let redirects = 0;
-            return history.listen((url) => {
-                const route = matcher.match(url);
-                if (!route) {
-                    redirects = 0;
-                    return;
-                }
-                for (const r of route.data) {
-                    if (r.redirect) {
-                        if (++redirects > MAX_REDIRECTS) {
-                            redirects = 0;
-                            throw new Error('space-router: too many redirects');
-                        }
-                        const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect;
-                        return router.navigate({ url: router.href(target), replace: true });
+            // Install before listening so a synchronous initial redirect can use
+            // router.match(), but roll back if history rejects the subscription.
+            matcher = nextMatcher;
+            try {
+                return history.listen((url) => {
+                    const route = nextMatcher.match(url);
+                    if (!route) {
+                        redirects = 0;
+                        return;
                     }
-                }
-                redirects = 0;
-                if (cb)
-                    cb(route);
-            });
+                    for (const r of route.data) {
+                        if (r.redirect) {
+                            if (++redirects > MAX_REDIRECTS) {
+                                redirects = 0;
+                                throw new Error('space-router: too many redirects');
+                            }
+                            const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect;
+                            return router.navigate({ url: router.href(target), replace: true });
+                        }
+                    }
+                    redirects = 0;
+                    if (cb)
+                        cb(route);
+                });
+            }
+            catch (error) {
+                matcher = previousMatcher;
+                throw error;
+            }
         },
-        navigate(to, curr) {
+        navigate(to, from) {
             const target = typeof to === 'string' ? { url: to } : to;
-            const url = router.href(target, curr);
+            const url = router.href(target, from);
             if (target.replace) {
                 history.replace(url);
             }
@@ -43,7 +53,7 @@ export function createRouter(options = {}) {
                 history.push(url);
             }
         },
-        href(to, curr) {
+        href(to, from) {
             // already a url
             if (typeof to === 'string') {
                 return to;
@@ -54,8 +64,7 @@ export function createRouter(options = {}) {
             }
             let target = to;
             if (target.merge) {
-                const c = curr || router.match(router.getUrl());
-                target = merge(c, target);
+                target = merge(from || router.match(router.getUrl()), target);
             }
             let url = target.pathname || '/';
             if (target.params) {
@@ -113,29 +122,28 @@ export function createMatcher(routeMap, options = {}) {
 }
 export function flatten(routeMap) {
     const routes = [];
-    const parentData = [];
-    function addLevel(level) {
+    function addLevel(level, parents) {
         level.forEach((route) => {
             const { path = '', routes: children, ...routeData } = route;
             const segment = { path, ...routeData };
+            const branch = [...parents, segment];
             // pathless routes only contribute data to their children — they have
             // no pattern of their own to match
             if (path) {
-                routes.push({ pattern: path, data: parentData.concat([segment]) });
+                routes.push({ pattern: path, data: branch });
             }
             if (children) {
-                parentData.push(segment);
-                addLevel(children);
-                parentData.pop();
+                addLevel(children, branch);
             }
         });
     }
-    addLevel(routeMap);
+    addLevel(routeMap, []);
     return routes;
 }
-export function merge(curr, to) {
-    const c = (curr || {});
-    const pathname = to.pathname || c.pattern || c.pathname;
+export function merge(from, to) {
+    const c = from || {};
+    const pattern = 'pattern' in c ? c.pattern : undefined;
+    const pathname = to.pathname || pattern || c.pathname;
     const params = Object.assign({}, c.params, to.params);
     const query = to.query === null ? null : Object.assign({}, c.query, to.query);
     const hash = to.hash === null ? null : to.hash || c.hash || '';

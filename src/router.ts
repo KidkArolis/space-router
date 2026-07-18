@@ -42,10 +42,12 @@ export type RouteDefinition<Data = Record<string, unknown>> = Data & {
   routes?: RouteDefinition<Data>[]
 }
 
+export type From<Data = Record<string, unknown>> = Partial<Route<Data>> | NavigateTarget
+
 export interface Router<Data = Record<string, unknown>> {
   listen(routes: RouteDefinition<Data>[], onChange?: (route: Route<Data>) => void): () => void
-  navigate(to: To, curr?: Route<Data>): void
-  href(to: To, curr?: Route<Data>): string
+  navigate(to: To, from?: From<Data>): void
+  href(to: To, from?: From<Data>): string
   match(url: string): Route<Data> | undefined
   getUrl(): string
   /**
@@ -78,32 +80,42 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
 
   const router: Router<Data> = {
     listen(routeMap, cb) {
-      matcher = createMatcher(routeMap, { qs })
+      const previousMatcher = matcher
+      const nextMatcher = createMatcher(routeMap, { qs })
       let redirects = 0
-      return history.listen((url) => {
-        const route = matcher.match(url)
-        if (!route) {
-          redirects = 0
-          return
-        }
-        for (const r of route.data) {
-          if (r.redirect) {
-            if (++redirects > MAX_REDIRECTS) {
-              redirects = 0
-              throw new Error('space-router: too many redirects')
-            }
-            const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect
-            return router.navigate({ url: router.href(target), replace: true })
+
+      // Install before listening so a synchronous initial redirect can use
+      // router.match(), but roll back if history rejects the subscription.
+      matcher = nextMatcher
+      try {
+        return history.listen((url) => {
+          const route = nextMatcher.match(url)
+          if (!route) {
+            redirects = 0
+            return
           }
-        }
-        redirects = 0
-        if (cb) cb(route)
-      })
+          for (const r of route.data) {
+            if (r.redirect) {
+              if (++redirects > MAX_REDIRECTS) {
+                redirects = 0
+                throw new Error('space-router: too many redirects')
+              }
+              const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect
+              return router.navigate({ url: router.href(target), replace: true })
+            }
+          }
+          redirects = 0
+          if (cb) cb(route)
+        })
+      } catch (error) {
+        matcher = previousMatcher
+        throw error
+      }
     },
 
-    navigate(to, curr) {
+    navigate(to, from) {
       const target: NavigateTarget = typeof to === 'string' ? { url: to } : to
-      const url = router.href(target, curr)
+      const url = router.href(target, from)
       if (target.replace) {
         history.replace(url)
       } else {
@@ -111,7 +123,7 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
       }
     },
 
-    href(to, curr) {
+    href(to, from) {
       // already a url
       if (typeof to === 'string') {
         return to
@@ -124,8 +136,7 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
 
       let target: NavigateTarget = to
       if (target.merge) {
-        const c = curr || router.match(router.getUrl())
-        target = merge(c, target)
+        target = merge(from || router.match(router.getUrl()), target)
       }
 
       let url = target.pathname || '/'
@@ -186,7 +197,7 @@ export function createMatcher<Data = Record<string, unknown>>(
       for (const route of routes) {
         const m = matchOne(route.pattern, url, qs)
         if (m) {
-          return { ...m, data: route.data } as Route<Data>
+          return { ...m, data: route.data }
         }
       }
       return undefined
@@ -196,8 +207,8 @@ export function createMatcher<Data = Record<string, unknown>>(
 
 export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[]): FlatRoute<Data>[] {
   const routes: FlatRoute<Data>[] = []
-  const parentData: RouteData<Data>[] = []
-  function addLevel(level: RouteDefinition<Data>[]) {
+
+  function addLevel(level: RouteDefinition<Data>[], parents: RouteData<Data>[]) {
     level.forEach((route) => {
       const {
         path = '',
@@ -208,25 +219,30 @@ export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinitio
         routes?: RouteDefinition<Data>[]
       }
       const segment = { path, ...routeData } as RouteData<Data>
+      const branch = [...parents, segment]
+
       // pathless routes only contribute data to their children — they have
       // no pattern of their own to match
       if (path) {
-        routes.push({ pattern: path, data: parentData.concat([segment]) })
+        routes.push({ pattern: path, data: branch })
       }
       if (children) {
-        parentData.push(segment)
-        addLevel(children)
-        parentData.pop()
+        addLevel(children, branch)
       }
     })
   }
-  addLevel(routeMap)
+
+  addLevel(routeMap, [])
   return routes
 }
 
-export function merge(curr: Partial<Route> | NavigateTarget | undefined, to: NavigateTarget): NavigateTarget {
-  const c = (curr || {}) as Partial<Route> & NavigateTarget
-  const pathname = to.pathname || c.pattern || c.pathname
+export function merge<Data = Record<string, unknown>>(
+  from: From<Data> | undefined,
+  to: NavigateTarget,
+): NavigateTarget {
+  const c = from || {}
+  const pattern = 'pattern' in c ? c.pattern : undefined
+  const pathname = to.pathname || pattern || c.pathname
   const params = Object.assign({}, c.params, to.params)
   const query = to.query === null ? null : Object.assign({}, c.query, to.query)
   const hash = to.hash === null ? null : to.hash || c.hash || ''

@@ -3,7 +3,7 @@ import { flatten } from '../src/router.ts'
 
 test('converts array of routes to array of internal route descriptors', (t) => {
   t.deepEqual(
-    flatten([
+    flatten<{ a: string }>([
       { path: '/foo', a: 'foo' },
       { path: '/bar', a: 'bar' },
     ]),
@@ -16,7 +16,7 @@ test('converts array of routes to array of internal route descriptors', (t) => {
 
 test('handles nested routes', (t) => {
   t.deepEqual(
-    flatten([
+    flatten<{ component: string }>([
       {
         component: 'root',
         routes: [
