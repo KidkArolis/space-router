@@ -1,6 +1,6 @@
-import { matchOne } from "./match.js";
-import { createHistory } from "./history.js";
-import { qs as defaultQs } from "./qs.js";
+import { matchOne } from './match.js';
+import { createHistory } from './history.js';
+import { qs as defaultQs } from './qs.js';
 const PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g;
 const MAX_REDIRECTS = 10;
 export function createRouter(options = {}) {
