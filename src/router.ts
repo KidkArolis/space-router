@@ -210,6 +210,9 @@ export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinitio
 
   function addLevel(level: RouteDefinition<Data>[], parents: RouteData<Data>[]) {
     level.forEach((route) => {
+      // the casts are the accepted price of the flat `Data &` route shape —
+      // TS can't rest-destructure a generic intersection. Before "fixing"
+      // this by nesting user data under a `meta` field, read AGENTS.md.
       const {
         path = '',
         routes: children,
