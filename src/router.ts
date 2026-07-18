@@ -42,12 +42,14 @@ export type RouteDefinition<Data = Record<string, unknown>> = Data & {
   routes?: RouteDefinition<Data>[]
 }
 
-export type From<Data = Record<string, unknown>> = Partial<Route<Data>> | NavigateTarget
+// exactly the fields merge() reads — routes, partial routes, and navigation
+// targets all satisfy this structurally
+export type From = Pick<NavigateTarget, 'pathname' | 'params' | 'query' | 'hash'> & { pattern?: string }
 
 export interface Router<Data = Record<string, unknown>> {
   listen(routes: RouteDefinition<Data>[], onChange?: (route: Route<Data>) => void): () => void
-  navigate(to: To, from?: From<Data>): void
-  href(to: To, from?: From<Data>): string
+  navigate(to: To, from?: From): void
+  href(to: To, from?: From): string
   match(url: string): Route<Data> | undefined
   getUrl(): string
   /**
@@ -239,13 +241,9 @@ export function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinitio
   return routes
 }
 
-export function merge<Data = Record<string, unknown>>(
-  from: From<Data> | undefined,
-  to: NavigateTarget,
-): NavigateTarget {
-  const c = from || {}
-  const pattern = 'pattern' in c ? c.pattern : undefined
-  const pathname = to.pathname || pattern || c.pathname
+export function merge(from: From | undefined, to: NavigateTarget): NavigateTarget {
+  const c: From = from || {}
+  const pathname = to.pathname || c.pattern || c.pathname
   const params = Object.assign({}, c.params, to.params)
   const query = to.query === null ? null : Object.assign({}, c.query, to.query)
   const hash = to.hash === null ? null : to.hash || c.hash || ''

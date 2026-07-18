@@ -33,11 +33,13 @@ export type RouteDefinition<Data = Record<string, unknown>> = Data & {
     redirect?: Redirect<Data>;
     routes?: RouteDefinition<Data>[];
 };
-export type From<Data = Record<string, unknown>> = Partial<Route<Data>> | NavigateTarget;
+export type From = Pick<NavigateTarget, 'pathname' | 'params' | 'query' | 'hash'> & {
+    pattern?: string;
+};
 export interface Router<Data = Record<string, unknown>> {
     listen(routes: RouteDefinition<Data>[], onChange?: (route: Route<Data>) => void): () => void;
-    navigate(to: To, from?: From<Data>): void;
-    href(to: To, from?: From<Data>): string;
+    navigate(to: To, from?: From): void;
+    href(to: To, from?: From): string;
     match(url: string): Route<Data> | undefined;
     getUrl(): string;
     /**
@@ -58,5 +60,5 @@ interface FlatRoute<Data = Record<string, unknown>> {
 export declare function createRouter<Data = Record<string, unknown>>(options?: RouterOptions): Router<Data>;
 export declare function createMatcher<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[], options?: MatcherOptions): Matcher<Data>;
 export declare function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[]): FlatRoute<Data>[];
-export declare function merge<Data = Record<string, unknown>>(from: From<Data> | undefined, to: NavigateTarget): NavigateTarget;
+export declare function merge(from: From | undefined, to: NavigateTarget): NavigateTarget;
 export {};

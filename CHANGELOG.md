@@ -1,3 +1,7 @@
+## 1.4.1
+
+- tighten the `From` type (types-only, no runtime change): it now lists exactly the fields `merge` reads — `{ pathname?, params?, query?, hash?, pattern? }` — instead of `Partial<Route> | NavigateTarget`. Routes, partial routes, and stored navigation targets all still satisfy it structurally. `From` also loses its never-load-bearing type parameter, so a `From<X>` annotation written against 1.4.0 becomes `From`.
+
 ## 1.4.0
 
 - `navigate(to, from)` and `href(to, from)` now correctly accept partial routes and navigation targets in their public TypeScript signatures (the new `From` type, pairing with `To`), matching their existing runtime behavior. The second argument was previously documented as `curr` — same position, same runtime behavior, clearer name.

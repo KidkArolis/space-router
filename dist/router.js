@@ -145,8 +145,7 @@ export function flatten(routeMap) {
 }
 export function merge(from, to) {
     const c = from || {};
-    const pattern = 'pattern' in c ? c.pattern : undefined;
-    const pathname = to.pathname || pattern || c.pathname;
+    const pathname = to.pathname || c.pattern || c.pathname;
     const params = Object.assign({}, c.params, to.params);
     const query = to.query === null ? null : Object.assign({}, c.query, to.query);
     const hash = to.hash === null ? null : to.hash || c.hash || '';
