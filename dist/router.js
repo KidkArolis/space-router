@@ -1,7 +1,7 @@
 import { matchOne } from './match.js';
 import { createHistory } from './history.js';
 import { qs as defaultQs } from './qs.js';
-const PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g;
+const PARAM_RE = /\/:([A-Za-z0-9_]+)([+*?])?/g;
 const MAX_REDIRECTS = 10;
 export function createRouter(options = {}) {
     const mode = options.mode || 'history';
@@ -67,18 +67,20 @@ export function createRouter(options = {}) {
                 target = merge(from || router.match(router.getUrl()), target);
             }
             let url = target.pathname || '/';
-            if (target.params) {
-                const params = target.params;
-                url = url.replace(PARAM_RE, (m, name, flag) => {
-                    const v = params[name];
-                    if (v == null)
-                        return m;
-                    if (flag === '+' || flag === '*') {
-                        return String(v).split('/').map(encodeURIComponent).join('/');
-                    }
-                    return encodeURIComponent(String(v));
-                });
-            }
+            url = url.replace(PARAM_RE, (m, name, flag) => {
+                const v = target.params?.[name];
+                // ? and * mean the segment may be absent — drop it (and its slash)
+                // when unfilled; an unfilled required param stays literal, loudly
+                if (v == null || v === '') {
+                    return flag === '?' || flag === '*' ? '' : m;
+                }
+                if (flag === '+' || flag === '*') {
+                    return '/' + String(v).split('/').map(encodeURIComponent).join('/');
+                }
+                return '/' + encodeURIComponent(String(v));
+            });
+            if (!url)
+                url = '/';
             if (target.query && Object.keys(target.query).length) {
                 const query = qs.stringify(target.query);
                 if (query) {

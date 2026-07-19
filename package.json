@@ -20,7 +20,7 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git://github.com/KidkArolis/space-router.git"
+    "url": "git+https://github.com/KidkArolis/space-router.git"
   },
   "keywords": [
     "browser",

@@ -16,3 +16,4 @@ export interface CreateHistoryOptions {
     schedule?: Schedule;
 }
 export declare function createHistory(options?: CreateHistoryOptions): History;
+//# sourceMappingURL=history.d.ts.map

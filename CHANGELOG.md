@@ -1,3 +1,10 @@
+## 1.4.2
+
+- `href` (and therefore `navigate`) now drops unfilled optional (`:name?`) and zero-or-more (`:name*`) segments instead of leaving the literal pattern text in the url — `href({ pathname: '/user/:id?' })` returns `/user`, not `/user/:id?`, which downstream consumers would read as a query string delimiter. Unfilled required params (`:name`, `:name+`) are still left in place as-is.
+- ship declaration maps so editors' go-to-definition lands in the published `src` instead of the `.d.ts` files.
+- use the `git+https` protocol for the repository url in package.json (GitHub retired `git://` in 2022).
+- docs: clarify that `listen`'s initial `onChange` call is delivered via the scheduler (a microtask by default), not synchronously.
+
 ## 1.4.1
 
 - tighten the `From` type (types-only, no runtime change): it now lists exactly the fields `merge` reads — `{ pathname?, params?, query?, hash?, pattern? }` — instead of `Partial<Route> | NavigateTarget`. Routes, partial routes, and stored navigation targets all still satisfy it structurally. `From` also loses its never-load-bearing type parameter, so a `From<X>` annotation written against 1.4.0 becomes `From`.

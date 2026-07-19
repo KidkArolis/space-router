@@ -70,7 +70,7 @@ interface FlatRoute<Data = Record<string, unknown>> {
   data: RouteData<Data>[]
 }
 
-const PARAM_RE = /:([A-Za-z0-9_]+)([+*?])?/g
+const PARAM_RE = /\/:([A-Za-z0-9_]+)([+*?])?/g
 const MAX_REDIRECTS = 10
 
 export function createRouter<Data = Record<string, unknown>>(options: RouterOptions = {}): Router<Data> {
@@ -143,17 +143,19 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
 
       let url = target.pathname || '/'
 
-      if (target.params) {
-        const params = target.params
-        url = url.replace(PARAM_RE, (m, name: string, flag: string | undefined) => {
-          const v = params[name]
-          if (v == null) return m
-          if (flag === '+' || flag === '*') {
-            return String(v).split('/').map(encodeURIComponent).join('/')
-          }
-          return encodeURIComponent(String(v))
-        })
-      }
+      url = url.replace(PARAM_RE, (m, name: string, flag: string | undefined) => {
+        const v = target.params?.[name]
+        // ? and * mean the segment may be absent — drop it (and its slash)
+        // when unfilled; an unfilled required param stays literal, loudly
+        if (v == null || v === '') {
+          return flag === '?' || flag === '*' ? '' : m
+        }
+        if (flag === '+' || flag === '*') {
+          return '/' + String(v).split('/').map(encodeURIComponent).join('/')
+        }
+        return '/' + encodeURIComponent(String(v))
+      })
+      if (!url) url = '/'
 
       if (target.query && Object.keys(target.query).length) {
         const query = qs.stringify(target.query)

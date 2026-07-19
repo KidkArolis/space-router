@@ -3,3 +3,4 @@ export interface Qs {
     stringify(query: Record<string, unknown>): string;
 }
 export declare const qs: Qs;
+//# sourceMappingURL=qs.d.ts.map

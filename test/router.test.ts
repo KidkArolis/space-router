@@ -195,6 +195,32 @@ test('href strips param flags', (t) => {
   dispose()
 })
 
+test('href drops unfilled optional and splat params', (t) => {
+  const { router, dispose } = createTestRouter()
+
+  // ? and * mean the segment may be absent — no params, empty params,
+  // and empty-string values all drop the segment along with its slash
+  t.is(router.href({ pathname: '/user/:id?' }), '/user')
+  t.is(router.href({ pathname: '/user/:id?', params: {} }), '/user')
+  t.is(router.href({ pathname: '/user/:id?', params: { id: '' } }), '/user')
+  t.is(router.href({ pathname: '/files/:rest*' }), '/files')
+  t.is(router.href({ pathname: '/files/:rest*', params: { rest: '' } }), '/files')
+  t.is(router.href({ pathname: '/a/:b?/c' }), '/a/c')
+  t.is(router.href({ pathname: '/:lang?' }), '/')
+
+  // in trailing position (the advertised use) the resulting urls
+  // round-trip through match
+  const matcher = createMatcher([{ path: '/user/:id?' }, { path: '/files/:rest*' }])
+  t.is(matcher.match(router.href({ pathname: '/user/:id?' }))?.pattern, '/user/:id?')
+  t.is(matcher.match(router.href({ pathname: '/files/:rest*' }))?.pattern, '/files/:rest*')
+
+  // unfilled required params stay literal — loud garbage-in, garbage-out
+  t.is(router.href({ pathname: '/user/:id' }), '/user/:id')
+  t.is(router.href({ pathname: '/files/:rest+' }), '/files/:rest+')
+
+  dispose()
+})
+
 test('href handles params with shared name prefixes', (t) => {
   const { router, dispose } = createTestRouter()
 

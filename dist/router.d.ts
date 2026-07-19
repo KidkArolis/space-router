@@ -62,3 +62,4 @@ export declare function createMatcher<Data = Record<string, unknown>>(routeMap: 
 export declare function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[]): FlatRoute<Data>[];
 export declare function merge(from: From | undefined, to: NavigateTarget): NavigateTarget;
 export {};
+//# sourceMappingURL=router.d.ts.map

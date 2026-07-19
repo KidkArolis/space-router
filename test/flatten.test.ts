@@ -37,7 +37,7 @@ test('handles nested routes', (t) => {
         component: 'second-root',
         routes: [
           {
-            path: '/baz/*',
+            path: '/baz/:rest*',
             component: 'baz',
           },
         ],
@@ -63,10 +63,10 @@ test('handles nested routes', (t) => {
       },
       { pattern: '/second', data: [{ path: '/second', component: 'second-root' }] },
       {
-        pattern: '/baz/*',
+        pattern: '/baz/:rest*',
         data: [
           { path: '/second', component: 'second-root' },
-          { path: '/baz/*', component: 'baz' },
+          { path: '/baz/:rest*', component: 'baz' },
         ],
       },
     ],

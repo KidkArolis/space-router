@@ -9,3 +9,4 @@ export interface MatchedRoute {
     hash: string;
 }
 export declare function matchOne(pattern: string, url: string, qs?: Qs): MatchedRoute | undefined;
+//# sourceMappingURL=match.d.ts.map

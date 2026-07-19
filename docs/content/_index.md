@@ -103,7 +103,7 @@ const dispose = router.listen(routes, onChange)
 
 Start listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, the `onChange` callback will get called with the matched `route` object.
 
-Note, calling listen will immediately call `onChange` based on the current url when in `history` or `hash` modes. This does not happen in `memory` mode so that you could perform the initial navigation yourself since there is no url to read from in that case.
+Note, calling listen will right away call `onChange` based on the current url when in `history` or `hash` modes — delivered via the scheduler, so in a microtask by default, or synchronously with `sync: true`. This does not happen in `memory` mode so that you could perform the initial navigation yourself since there is no url to read from in that case.
 
 - `routes` an array of route definitions, where each route is an object of shape `{ path, redirect, routes, ...metadata }`
   - `path` is the url pattern to match that can include named parameters as segments — see [Patterns](#patterns)
@@ -135,7 +135,7 @@ Route `path` patterns support named segments and a few flag suffixes:
 - `:name*` — zero or more segments, joined with `/`. `/files/:path*` matches `/files` and `/files/a/b`.
 - `*` — catch-all, used as a whole pattern (typically as the last route to render a NotFound page).
 
-Param values in matched URLs are decoded with `decodeURIComponent`. When you build URLs with `navigate` or `href`, params are encoded for you, so values containing `/`, spaces, or other special characters round-trip safely.
+Param values in matched URLs are decoded with `decodeURIComponent`. When you build URLs with `navigate` or `href`, params are encoded for you, so values containing `/`, spaces, or other special characters round-trip safely. Unfilled `:name?` and `:name*` segments are dropped from the generated url — `href({ pathname: '/user/:id?' })` returns `/user` — while an unfilled required segment is left in place as-is.
 
 ### `navigate`
 
