@@ -253,6 +253,9 @@ h1 {
   padding-left: 12px;
   color: #1e1e1e;
 }
+#TOC a[href='#patterns'] {
+  display: none;
+}
 #TOC a:hover {
   -moz-transition: all linear 0.2s;
   transition: all linear 0.2s;
