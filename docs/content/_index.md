@@ -101,7 +101,7 @@ Create the router object.
 const dispose = router.listen(routes, onChange)
 ```
 
-Start listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, the `onChange` callback will get called with the matched `route` object.
+Start listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, `onChange(route, info)` is called with the matched `route` object, or `undefined` when no route matched. `info.traversal` is true for back/forward traversal and false for app-created navigations and the initial call.
 
 Note, calling listen will right away call `onChange` based on the current url when in `history` or `hash` modes — delivered via the scheduler, so in a microtask by default, or synchronously with `sync: true`. This does not happen in `memory` mode so that you could perform the initial navigation yourself since there is no url to read from in that case.
 
@@ -110,7 +110,7 @@ Note, calling listen will right away call `onChange` based on the current url wh
   - `redirect` can be a string, a `to` object, or a function `(route) => to` that redirects upon entering that route. Cyclic redirects are capped (an error is thrown after 10 hops)
   - `routes` is a nested array of nested route definitions
   - `...metadata` any other keys can be chosen by you
-- `onChange` is called with the `route` object
+- `onChange` is called with the matched `route` (or `undefined`) and `{ traversal }` navigation info
 
 `route` is an object of shape `{ url, pathname, params, query, search, hash, pattern, data }`:
 
@@ -209,12 +209,20 @@ router.href({ query: { 'top-rated': 1 }, merge: true })
 router.href({ query: { 'top-rated': undefined }, merge: true })
 ```
 
-Create a relative url string to use in `<a href>` attribute. Param values are URL-encoded so the resulting string round-trips through `match`.
+Create a normalized, browser-facing string to use directly in an `<a href>` attribute. Hash-mode route hrefs include their leading `#`; ordinary fragments and external or protocol-relative URLs are returned unchanged. Param values are URL-encoded so the resulting string round-trips through `match`.
 
 - `to` object of shape `{ pathname, params, query, hash }`. The `params` will be interpolated into the pathname if the pathname contains any parametrised segments. The `query` is an object that will be passed through `qs.stringify`.
 - `from` - optional route, partial route, or navigation target to merge against when `to.merge` is set, mirroring `navigate(to, from)`.
 
-Note: `to` can be a string, in which case `href` simply returns the input. Similarly, the `to` can contain a `{ url }` key in which case `href` returns that url. This is to align the function signature with that of `navigate` so the two can be used interchangeably.
+`to` can be a string or contain a `{ url }` key, matching `navigate`. Route targets are normalized, so `/shows/` becomes `/shows` in history and memory modes or `#/shows` in hash mode. An already formatted hash route is normalized without adding another `#`; ordinary fragments and protocol targets are left unchanged.
+
+### `routeUrl`
+
+```js
+const url = router.routeUrl(href)
+```
+
+Convert a browser-facing href into the normalized relative url consumed by matching and routing. In history and memory mode, `/shows?page=2` stays `/shows?page=2`; in hash mode, `#/shows?page=2` becomes `/shows?page=2`. Returns `null` for ordinary fragments, protocol and protocol-relative URLs, and hrefs that do not belong to the configured routing mode.
 
 ### `getUrl`
 
@@ -240,7 +248,7 @@ Replace the current history entry with the given url, using mode-appropriate mec
 import { createHistory } from 'space-router'
 
 const history = createHistory({ mode: 'history' })
-const dispose = history.listen((url) => console.log(url))
+const dispose = history.listen((url, info) => console.log(url, info.traversal))
 history.push('/foo')
 history.replace('/bar')
 const url = history.getUrl()
@@ -255,7 +263,7 @@ A lower level building block that the router uses internally. It wraps the three
 
 Returns an object with:
 
-- `listen(onChange)` - subscribe to url changes, returns a dispose function. Only one listener can be attached at a time
+- `listen(onChange)` - subscribe to url changes. `onChange(url, info)` receives the surviving emission's url and `{ traversal }` metadata. Returns a dispose function; only one listener can be attached at a time
 - `getUrl()` - the current url string
 - `push(url)` - navigate, pushing a new entry onto the navigation stack
 - `replace(url)` - navigate, replacing the current entry

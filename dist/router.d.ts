@@ -1,5 +1,5 @@
 import { type MatchedRoute } from './match.ts';
-import { type Mode, type Schedule } from './history.ts';
+import { type Mode, type NavigationInfo, type Schedule } from './history.ts';
 import { type Qs } from './qs.ts';
 export interface RouterOptions {
     mode?: Mode;
@@ -37,9 +37,10 @@ export type From = Pick<NavigateTarget, 'pathname' | 'params' | 'query' | 'hash'
     pattern?: string;
 };
 export interface Router<Data = Record<string, unknown>> {
-    listen(routes: RouteDefinition<Data>[], onChange?: (route: Route<Data>) => void): () => void;
+    listen(routes: RouteDefinition<Data>[], onChange?: (route: Route<Data> | undefined, info: NavigationInfo) => void): () => void;
     navigate(to: To, from?: From): void;
     href(to: To, from?: From): string;
+    routeUrl(href: string): string | null;
     match(url: string): Route<Data> | undefined;
     getUrl(): string;
     /**

@@ -1,6 +1,6 @@
 import test from 'ava'
 import { qs, createMatcher, createRouter } from '../src/index.ts'
-import type { Route, RouteDefinition, Router } from '../src/index.ts'
+import type { NavigationInfo, Route, RouteDefinition, Router } from '../src/index.ts'
 
 interface TestRouteData {
   component?: string
@@ -12,7 +12,7 @@ interface TestRouterOptions {
   withoutCatchAll?: boolean
 }
 
-type RouteChange = (route: Route<TestRouteData>) => void
+type RouteChange = (route: Route<TestRouteData> | undefined, info: NavigationInfo) => void
 
 test('createRouter, listen, navigate and dispose', (t) => {
   const calls: string[] = []
@@ -92,6 +92,57 @@ test('.href(to)', (t) => {
   dispose()
 })
 
+test('href returns browser-facing urls in each mode', (t) => {
+  const history = createRouter({ mode: 'history' })
+  const memory = createRouter({ mode: 'memory' })
+  const hash = createRouter({ mode: 'hash' })
+
+  t.is(history.href('/people'), '/people')
+  t.is(history.href('/people/'), '/people')
+  t.is(memory.href('/people'), '/people')
+  t.is(memory.href('/people/'), '/people')
+  t.is(hash.href('/people'), '#/people')
+  t.is(hash.href('/people/'), '#/people')
+  t.is(hash.href('#/people'), '#/people')
+  t.is(hash.href('#/people/'), '#/people')
+  t.is(hash.href({ pathname: '/people', query: { page: 2 } }), '#/people?page=2')
+  t.is(hash.href({ pathname: '/docs', hash: 'install' }), '#/docs#install')
+
+  for (const router of [history, memory, hash]) {
+    t.is(router.href('#section'), '#section')
+    t.is(router.href('#section/'), '#section/')
+    t.is(router.href('mailto:hello@example.com'), 'mailto:hello@example.com')
+    t.is(router.href('//cdn.example.com/file'), '//cdn.example.com/file')
+  }
+})
+
+test('routeUrl converts only browser hrefs owned by the configured mode', (t) => {
+  const history = createRouter({ mode: 'history' })
+  const memory = createRouter({ mode: 'memory' })
+  const hash = createRouter({ mode: 'hash' })
+
+  t.is(history.routeUrl('/people?page=2'), '/people?page=2')
+  t.is(memory.routeUrl('/people?page=2'), '/people?page=2')
+  t.is(hash.routeUrl('#/people?page=2'), '/people?page=2')
+  t.is(hash.routeUrl('/people?page=2'), null)
+
+  for (const router of [history, memory, hash]) {
+    t.is(router.routeUrl('#section'), null)
+    t.is(router.routeUrl('https://example.com/people'), null)
+    t.is(router.routeUrl('//example.com/people'), null)
+  }
+})
+
+test('navigate accepts the browser-facing href returned in hash mode without double-prefixing', (t) => {
+  const router = createRouter({ mode: 'hash', sync: true })
+  const href = router.href('/people')
+
+  router.navigate(href)
+
+  t.is(href, '#/people')
+  t.is(router.getUrl(), '/people')
+})
+
 test('.match(url)', (t) => {
   const { router, dispose } = createTestRouter()
 
@@ -169,6 +220,27 @@ test('redirects', (t) => {
   t.deepEqual(['bar', 'user=1', 'user=2', 'foo'], calls)
 
   dispose()
+})
+
+test('redirects emit only the final matched or unmatched destination metadata', (t) => {
+  const calls: { url: string | undefined; traversal: boolean }[] = []
+  const router = createRouter({ mode: 'memory', sync: true })
+  router.listen(
+    [
+      { path: '/matched-redirect', redirect: '/destination' },
+      { path: '/unmatched-redirect', redirect: '/missing' },
+      { path: '/destination' },
+    ],
+    (route, info) => calls.push({ url: route?.url, traversal: info.traversal }),
+  )
+
+  router.navigate('/matched-redirect')
+  router.navigate('/unmatched-redirect')
+
+  t.deepEqual(calls, [
+    { url: '/destination', traversal: false },
+    { url: undefined, traversal: false },
+  ])
 })
 
 test('href encodes params', (t) => {
@@ -257,7 +329,7 @@ test('getUrl after dispose does not throw', (t) => {
 test('a rejected second listen leaves the active matcher and listener intact', (t) => {
   const calls: string[] = []
   const router = createRouter({ mode: 'memory', sync: true })
-  const dispose = router.listen([{ path: '/a' }], (route) => calls.push(route.url))
+  const dispose = router.listen([{ path: '/a' }], (route) => calls.push(route?.url ?? 'unmatched'))
 
   t.throws(() => router.listen([{ path: '/b' }], () => {}), { message: 'Already listening' })
 
@@ -272,7 +344,7 @@ test('coalesces rapid async navigations into a single emit', async (t) => {
   const calls: string[] = []
   const router = createRouter({ mode: 'memory' })
   router.listen([{ path: '*' }], (route) => {
-    calls.push(route.url)
+    calls.push(route?.url ?? 'unmatched')
   })
 
   router.navigate('/a')
@@ -287,7 +359,7 @@ test('coalesces rapid async navigations into a single emit', async (t) => {
 test('replaceUrl updates the url without emitting a route change', async (t) => {
   const calls: string[] = []
   const router = createRouter({ mode: 'memory' })
-  router.listen([{ path: '*' }], (route) => calls.push(route.url))
+  router.listen([{ path: '*' }], (route) => calls.push(route?.url ?? 'unmatched'))
 
   router.navigate('/a')
   await Promise.resolve()
@@ -320,7 +392,7 @@ test('replaceUrl normalizes urls like navigate', (t) => {
 test('a pending navigate emit observes a subsequent replaceUrl', async (t) => {
   const calls: string[] = []
   const router = createRouter({ mode: 'memory' })
-  router.listen([{ path: '*' }], (route) => calls.push(route.url))
+  router.listen([{ path: '*' }], (route) => calls.push(route?.url ?? 'unmatched'))
 
   router.navigate('/a')
   router.replaceUrl('/b')
@@ -340,7 +412,7 @@ test('custom schedule controls when route changes are delivered', (t) => {
   const fires: (() => void)[] = []
   const router = createRouter({ mode: 'memory', schedule: (fire) => fires.push(fire) })
   router.listen([{ path: '*' }], (route) => {
-    calls.push(route.url)
+    calls.push(route?.url ?? 'unmatched')
   })
 
   router.navigate('/a')
@@ -352,7 +424,24 @@ test('custom schedule controls when route changes are delivered', (t) => {
   t.deepEqual(calls, ['/b'])
 })
 
-function renderRoute(route: Route<TestRouteData>): string {
+test('listen emits matched and unmatched urls with navigation metadata', (t) => {
+  const calls: { url: string | undefined; traversal: boolean }[] = []
+  const router = createRouter({ mode: 'memory', sync: true })
+  router.listen([{ path: '/known' }], (route, info) => {
+    calls.push({ url: route?.url, traversal: info.traversal })
+  })
+
+  router.navigate('/known')
+  router.navigate('/unknown')
+
+  t.deepEqual(calls, [
+    { url: '/known', traversal: false },
+    { url: undefined, traversal: false },
+  ])
+})
+
+function renderRoute(route: Route<TestRouteData> | undefined): string {
+  if (!route) throw new Error('Expected a matched route')
   const render = route.data[0].render
   if (!render) throw new Error(`Missing render metadata for ${route.pattern}`)
   return render(route.params, route.query, route.hash)

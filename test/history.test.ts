@@ -258,6 +258,23 @@ test.serial('history mode scheduler receives traversal true only for popstate', 
   t.deepEqual(calls, ['/', '/a', '/b', '/'])
 })
 
+test.serial('history listener receives initial, navigation, and traversal metadata', (t) => {
+  const calls: { url: string; traversal: boolean }[] = []
+  withFakeHistoryDom(({ back }) => {
+    const h = createHistory({ mode: 'history', sync: true })
+    h.listen((url, info) => calls.push({ url, traversal: info.traversal }))
+    h.push('/a')
+    h.replace('/b')
+    back('/')
+  })
+  t.deepEqual(calls, [
+    { url: '/', traversal: false },
+    { url: '/a', traversal: false },
+    { url: '/b', traversal: false },
+    { url: '/', traversal: true },
+  ])
+})
+
 test.serial('hash mode scheduler receives traversal false for own push, true for external hashchange', (t) => {
   const seen: boolean[] = []
   const calls: string[] = []
@@ -278,23 +295,40 @@ test.serial('hash mode scheduler receives traversal false for own push, true for
   t.deepEqual(calls, ['/', '/foo', '/foo', '/'])
 })
 
+test.serial('hash listener distinguishes self-created hash changes from traversal', (t) => {
+  const calls: { url: string; traversal: boolean }[] = []
+  withFakeHashDom(({ back }) => {
+    const h = createHistory({ mode: 'hash', sync: true })
+    h.listen((url, info) => calls.push({ url, traversal: info.traversal }))
+    h.push('/foo')
+    h.push('/foo')
+    back('/')
+  })
+  t.deepEqual(calls, [
+    { url: '/', traversal: false },
+    { url: '/foo', traversal: false },
+    { url: '/foo', traversal: false },
+    { url: '/', traversal: true },
+  ])
+})
+
 test.serial('a push racing a deferred traversal emit results in a single emit of the final url', (t) => {
-  const calls: string[] = []
+  const calls: { url: string; traversal: boolean }[] = []
   withFakeHistoryDom(({ back }) => {
     const deferred: (() => void)[] = []
     const h = createHistory({
       mode: 'history',
       schedule: (fire, { traversal }) => (traversal ? deferred.push(fire) : fire()),
     })
-    h.listen((url) => calls.push(url))
+    h.listen((url, info) => calls.push({ url, traversal: info.traversal }))
     calls.length = 0 // ignore the initial emit
     back('/away')
     t.deepEqual(calls, [], 'deferred traversal emit did not fire within the event task')
     h.push('/pushed') // races the deferred fire, supersedes it
-    t.deepEqual(calls, ['/pushed'])
+    t.deepEqual(calls, [{ url: '/pushed', traversal: false }])
     for (const fire of deferred) fire() // stale fires no-op
   })
-  t.deepEqual(calls, ['/pushed'])
+  t.deepEqual(calls, [{ url: '/pushed', traversal: false }])
 })
 
 test.serial('a deferred traversal emit fires with the current url when not superseded', (t) => {

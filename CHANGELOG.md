@@ -1,3 +1,9 @@
+## 2.0.0
+
+- `href(to, from)` now returns a normalized, browser-facing href: hash-mode route targets are prefixed with `#`, while ordinary fragments and protocol or protocol-relative URLs are left unchanged. Already formatted hash routes are normalized without double-prefixing, and `navigate` accepts the resulting hrefs directly.
+- add `router.routeUrl(href)` to convert browser-facing hrefs back to normalized router URLs and reject fragments or external targets that do not belong to the route table.
+- router and history listeners now receive `{ traversal }` metadata for the emission that actually survives scheduling. Router listeners are also called with `undefined` for unmatched URLs; redirects still suppress their intermediate route and emit only their eventual destination.
+
 ## 1.4.2
 
 - `href` (and therefore `navigate`) now drops unfilled optional (`:name?`) and zero-or-more (`:name*`) segments instead of leaving the literal pattern text in the url — `href({ pathname: '/user/:id?' })` returns `/user`, not `/user/:id?`, which downstream consumers would read as a query string delimiter. Unfilled required params (`:name`, `:name+`) are still left in place as-is.

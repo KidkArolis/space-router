@@ -1,5 +1,5 @@
 import { matchOne, type MatchedRoute } from './match.ts'
-import { createHistory, type Mode, type Schedule } from './history.ts'
+import { createHistory, normalizeRouteUrl, type Mode, type NavigationInfo, type Schedule } from './history.ts'
 import { qs as defaultQs, type Qs } from './qs.ts'
 
 export interface RouterOptions {
@@ -47,9 +47,13 @@ export type RouteDefinition<Data = Record<string, unknown>> = Data & {
 export type From = Pick<NavigateTarget, 'pathname' | 'params' | 'query' | 'hash'> & { pattern?: string }
 
 export interface Router<Data = Record<string, unknown>> {
-  listen(routes: RouteDefinition<Data>[], onChange?: (route: Route<Data>) => void): () => void
+  listen(
+    routes: RouteDefinition<Data>[],
+    onChange?: (route: Route<Data> | undefined, info: NavigationInfo) => void,
+  ): () => void
   navigate(to: To, from?: From): void
   href(to: To, from?: From): string
+  routeUrl(href: string): string | null
   match(url: string): Route<Data> | undefined
   getUrl(): string
   /**
@@ -71,7 +75,18 @@ interface FlatRoute<Data = Record<string, unknown>> {
 }
 
 const PARAM_RE = /\/:([A-Za-z0-9_]+)([+*?])?/g
+const PROTOCOL_RE = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i
 const MAX_REDIRECTS = 10
+
+function browserHref(href: string, mode: Mode): string {
+  if (PROTOCOL_RE.test(href)) return href
+  if (mode === 'hash') {
+    if (href.startsWith('#/')) return '#' + normalizeRouteUrl(href.slice(1))
+    if (href.startsWith('#')) return href
+    return '#' + normalizeRouteUrl(href)
+  }
+  return href.startsWith('#') ? href : normalizeRouteUrl(href)
+}
 
 export function createRouter<Data = Record<string, unknown>>(options: RouterOptions = {}): Router<Data> {
   const mode = options.mode || 'history'
@@ -90,10 +105,11 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
       // router.match(), but roll back if history rejects the subscription.
       matcher = nextMatcher
       try {
-        return history.listen((url) => {
+        return history.listen((url, info) => {
           const route = nextMatcher.match(url)
           if (!route) {
             redirects = 0
+            if (cb) cb(undefined, info)
             return
           }
           for (const r of route.data) {
@@ -107,7 +123,7 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
             }
           }
           redirects = 0
-          if (cb) cb(route)
+          if (cb) cb(route, info)
         })
       } catch (error) {
         matcher = previousMatcher
@@ -117,7 +133,8 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
 
     navigate(to, from) {
       const target: NavigateTarget = typeof to === 'string' ? { url: to } : to
-      const url = router.href(target, from)
+      const href = router.href(target, from)
+      const url = router.routeUrl(href) ?? href
       if (target.replace) {
         history.replace(url)
       } else {
@@ -126,14 +143,12 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
     },
 
     href(to, from) {
-      // already a url
       if (typeof to === 'string') {
-        return to
+        return browserHref(to, mode)
       }
 
-      // align with navigate API
       if (to.url) {
-        return to.url
+        return browserHref(to.url, mode)
       }
 
       let target: NavigateTarget = to
@@ -169,7 +184,14 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
         url = url + prefix + target.hash
       }
 
-      return url
+      return browserHref(url, mode)
+    },
+
+    routeUrl(href) {
+      if (PROTOCOL_RE.test(href)) return null
+      if (mode === 'hash') return href.startsWith('#/') ? normalizeRouteUrl(href.slice(1)) : null
+      if (href.startsWith('#')) return null
+      return normalizeRouteUrl(href)
     },
 
     match(url) {

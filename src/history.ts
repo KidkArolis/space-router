@@ -1,16 +1,18 @@
 export type Mode = 'history' | 'hash' | 'memory'
 
 export interface History {
-  listen(onChange: (url: string) => void): () => void
+  listen(onChange: (url: string, info: NavigationInfo) => void): () => void
   getUrl(): string
   push(url: string): void
   replace(url: string): void
   replaceSilent(url: string): void
 }
 
-export interface ScheduleInfo {
+export interface NavigationInfo {
   traversal: boolean
 }
+
+export type ScheduleInfo = NavigationInfo
 
 export type Schedule = (fire: () => void, info: ScheduleInfo) => void
 
@@ -21,7 +23,7 @@ export interface CreateHistoryOptions {
 }
 
 interface Subscription {
-  listener: (url: string) => void
+  listener: (url: string, info: NavigationInfo) => void
   off?: () => void
 }
 
@@ -38,8 +40,8 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
     mode = 'memory'
   }
 
-  function emit() {
-    active?.listener(getUrl())
+  function emit(info: NavigationInfo) {
+    active?.listener(getUrl(), info)
   }
 
   // each scheduled fire captures its seq: superseded fires no-op, and the
@@ -48,12 +50,10 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
   // coalesce into a single emit of the final url
   function scheduleEmit(traversal: boolean) {
     const s = ++seq
-    schedule(
-      () => {
-        if (s === seq) emit()
-      },
-      { traversal },
-    )
+    const info = { traversal }
+    schedule(() => {
+      if (s === seq) emit(info)
+    }, info)
   }
 
   function onTraversal() {
@@ -64,7 +64,7 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
     scheduleEmit(traversal)
   }
 
-  function listen(onChange: (url: string) => void) {
+  function listen(onChange: (url: string, info: NavigationInfo) => void) {
     if (active) throw new Error('Already listening')
 
     const subscription: Subscription = { listener: onChange }
@@ -90,12 +90,8 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
     return dispose
   }
 
-  function normalize(url: string) {
-    return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/'
-  }
-
   function go(url: string, replace?: boolean) {
-    url = normalize(url)
+    url = normalizeRouteUrl(url)
     if (mode === 'history') {
       history[replace ? 'replaceState' : 'pushState']({}, '', url)
       scheduleEmit(false)
@@ -145,7 +141,7 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
   // this is also why we can't reuse go()'s location.replace path, which does
   // fire hashchange and would emit.
   function replaceSilent(url: string) {
-    url = normalize(url)
+    url = normalizeRouteUrl(url)
     if (mode === 'history') {
       history.replaceState({}, '', url)
     } else if (mode === 'hash') {
@@ -171,6 +167,10 @@ export function createHistory(options: CreateHistoryOptions = {}): History {
     },
     replaceSilent,
   }
+}
+
+export function normalizeRouteUrl(url: string): string {
+  return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/'
 }
 
 function on(el: Window, type: string, fn: () => void) {

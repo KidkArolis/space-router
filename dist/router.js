@@ -1,8 +1,21 @@
 import { matchOne } from './match.js';
-import { createHistory } from './history.js';
+import { createHistory, normalizeRouteUrl } from './history.js';
 import { qs as defaultQs } from './qs.js';
 const PARAM_RE = /\/:([A-Za-z0-9_]+)([+*?])?/g;
+const PROTOCOL_RE = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
 const MAX_REDIRECTS = 10;
+function browserHref(href, mode) {
+    if (PROTOCOL_RE.test(href))
+        return href;
+    if (mode === 'hash') {
+        if (href.startsWith('#/'))
+            return '#' + normalizeRouteUrl(href.slice(1));
+        if (href.startsWith('#'))
+            return href;
+        return '#' + normalizeRouteUrl(href);
+    }
+    return href.startsWith('#') ? href : normalizeRouteUrl(href);
+}
 export function createRouter(options = {}) {
     const mode = options.mode || 'history';
     const qs = options.qs || defaultQs;
@@ -17,10 +30,12 @@ export function createRouter(options = {}) {
             // router.match(), but roll back if history rejects the subscription.
             matcher = nextMatcher;
             try {
-                return history.listen((url) => {
+                return history.listen((url, info) => {
                     const route = nextMatcher.match(url);
                     if (!route) {
                         redirects = 0;
+                        if (cb)
+                            cb(undefined, info);
                         return;
                     }
                     for (const r of route.data) {
@@ -35,7 +50,7 @@ export function createRouter(options = {}) {
                     }
                     redirects = 0;
                     if (cb)
-                        cb(route);
+                        cb(route, info);
                 });
             }
             catch (error) {
@@ -45,7 +60,8 @@ export function createRouter(options = {}) {
         },
         navigate(to, from) {
             const target = typeof to === 'string' ? { url: to } : to;
-            const url = router.href(target, from);
+            const href = router.href(target, from);
+            const url = router.routeUrl(href) ?? href;
             if (target.replace) {
                 history.replace(url);
             }
@@ -54,13 +70,11 @@ export function createRouter(options = {}) {
             }
         },
         href(to, from) {
-            // already a url
             if (typeof to === 'string') {
-                return to;
+                return browserHref(to, mode);
             }
-            // align with navigate API
             if (to.url) {
-                return to.url;
+                return browserHref(to.url, mode);
             }
             let target = to;
             if (target.merge) {
@@ -91,7 +105,16 @@ export function createRouter(options = {}) {
                 const prefix = target.hash.startsWith('#') ? '' : '#';
                 url = url + prefix + target.hash;
             }
-            return url;
+            return browserHref(url, mode);
+        },
+        routeUrl(href) {
+            if (PROTOCOL_RE.test(href))
+                return null;
+            if (mode === 'hash')
+                return href.startsWith('#/') ? normalizeRouteUrl(href.slice(1)) : null;
+            if (href.startsWith('#'))
+                return null;
+            return normalizeRouteUrl(href);
         },
         match(url) {
             return matcher.match(url);

@@ -8,8 +8,8 @@ export function createHistory(options = {}) {
     if (typeof window === 'undefined') {
         mode = 'memory';
     }
-    function emit() {
-        active?.listener(getUrl());
+    function emit(info) {
+        active?.listener(getUrl(), info);
     }
     // each scheduled fire captures its seq: superseded fires no-op, and the
     // surviving one reads the url fresh in emit() — so racing schedules of any
@@ -17,10 +17,11 @@ export function createHistory(options = {}) {
     // coalesce into a single emit of the final url
     function scheduleEmit(traversal) {
         const s = ++seq;
+        const info = { traversal };
         schedule(() => {
             if (s === seq)
-                emit();
-        }, { traversal });
+                emit(info);
+        }, info);
     }
     function onTraversal() {
         // a hashchange caused by our own push/replace is a navigation,
@@ -54,11 +55,8 @@ export function createHistory(options = {}) {
         }
         return dispose;
     }
-    function normalize(url) {
-        return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
-    }
     function go(url, replace) {
-        url = normalize(url);
+        url = normalizeRouteUrl(url);
         if (mode === 'history') {
             history[replace ? 'replaceState' : 'pushState']({}, '', url);
             scheduleEmit(false);
@@ -107,7 +105,7 @@ export function createHistory(options = {}) {
     // this is also why we can't reuse go()'s location.replace path, which does
     // fire hashchange and would emit.
     function replaceSilent(url) {
-        url = normalize(url);
+        url = normalizeRouteUrl(url);
         if (mode === 'history') {
             history.replaceState({}, '', url);
         }
@@ -135,6 +133,9 @@ export function createHistory(options = {}) {
         },
         replaceSilent,
     };
+}
+export function normalizeRouteUrl(url) {
+    return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
 }
 function on(el, type, fn) {
     el.addEventListener(type, fn, false);
