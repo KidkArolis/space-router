@@ -153,15 +153,17 @@ Space Router packs all the features you need to keep your app in sync with the u
 <ul>
 <li><code>options</code> object
 <ul>
-<li><code>mode</code> - one of <code>history</code>, <code>hash</code>, <code>memory</code>, default is <code>history</code></li>
+<li><code>mode</code> - one of <code>history</code>, <code>hash</code>, <code>memory</code>, default is <code>history</code>. <code>memory</code> is used automatically when there is no <code>window</code>, e.g. on the server</li>
 <li><code>qs</code> - a custom query string parser, an object of shape <code>{ parse, stringify }</code></li>
+<li><code>sync</code> - set to true to deliver url changes to the listener synchronously. By default changes are coalesced and delivered in a microtask, so rapid successive navigations produce a single listener call. Shorthand for <code>schedule: (fire) =&gt; fire()</code></li>
+<li><code>schedule</code> - a function <code>(fire, info) =&gt; void</code> controlling how url changes are delivered to the listener. Call <code>fire()</code> to deliver the change — the scheduler must eventually call it, but may defer it however it likes, e.g. <code>(fire) =&gt; setTimeout(fire, 0)</code>. <code>info.traversal</code> is true when the change was triggered by a back/forward traversal (<code>popstate</code> or <code>hashchange</code>), false for programmatic navigations and the initial <code>listen</code> call. Calling a superseded <code>fire</code> is harmless — only the latest scheduled change is delivered, and it reads the url at fire time. Takes precedence over <code>sync</code> when both are set. Default: <code>(fire) =&gt; queueMicrotask(fire)</code></li>
 </ul>
 </li>
 </ul>
 <h3 id="listen"><code>listen</code></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">dispose</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="nx">routes</span><span class="p">,</span> <span class="nx">onChange</span><span class="p">)</span>
-</span></span></code></pre></div><p>Start listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, the <code>onChange</code> callback will get called with the matched <code>route</code> object.</p>
-<p>Note, calling listen will immediately call <code>onChange</code> based on the current url when in <code>history</code> or <code>hash</code> modes. This does not happen in <code>memory</code> mode so that you could perform the initial navigation yourself since there is no url to read from in that case.</p>
+</span></span></code></pre></div><p>Start listening to url changes. Every time the url changes via back/forward button or by performing programmatic navigations, <code>onChange(route, info)</code> is called with the matched <code>route</code> object, or <code>undefined</code> when no route matched. <code>info.traversal</code> is true for back/forward traversal and false for app-created navigations and the initial call.</p>
+<p>Note, calling listen will right away call <code>onChange</code> based on the current url when in <code>history</code> or <code>hash</code> modes — delivered via the scheduler, so in a microtask by default, or synchronously with <code>sync: true</code>. This does not happen in <code>memory</code> mode so that you could perform the initial navigation yourself since there is no url to read from in that case.</p>
 <ul>
 <li><code>routes</code> an array of route definitions, where each route is an object of shape <code>{ path, redirect, routes, ...metadata }</code>
 <ul>
@@ -171,7 +173,7 @@ Space Router packs all the features you need to keep your app in sync with the u
 <li><code>...metadata</code> any other keys can be chosen by you</li>
 </ul>
 </li>
-<li><code>onChange</code> is called with the <code>route</code> object</li>
+<li><code>onChange</code> is called with the matched <code>route</code> (or <code>undefined</code>) and <code>{ traversal }</code> navigation info</li>
 </ul>
 <p><code>route</code> is an object of shape <code>{ url, pathname, params, query, search, hash, pattern, data }</code>:</p>
 <ul>
@@ -182,7 +184,7 @@ Space Router packs all the features you need to keep your app in sync with the u
 <li><code>search</code> full unparsed query string</li>
 <li><code>hash</code> hash fragment</li>
 <li><code>pattern</code> the matched route pattern as defined in the route config</li>
-<li><code>data</code> an array of nested matched route objects with any metadata found in the route config</li>
+<li><code>data</code> an array of the matched route&rsquo;s metadata, one entry per nesting level. Each entry includes the <code>path</code> it was declared with along with any metadata you defined</li>
 </ul>
 <p>Listen returns a <code>dispose</code> function that stops listening to url changes.</p>
 <h3 id="patterns">Patterns</h3>
@@ -194,10 +196,10 @@ Space Router packs all the features you need to keep your app in sync with the u
 <li><code>:name*</code> — zero or more segments, joined with <code>/</code>. <code>/files/:path*</code> matches <code>/files</code> and <code>/files/a/b</code>.</li>
 <li><code>*</code> — catch-all, used as a whole pattern (typically as the last route to render a NotFound page).</li>
 </ul>
-<p>Param values in matched URLs are decoded with <code>decodeURIComponent</code>. When you build URLs with <code>navigate</code> or <code>href</code>, params are encoded for you, so values containing <code>/</code>, spaces, or other special characters round-trip safely.</p>
+<p>Param values in matched URLs are decoded with <code>decodeURIComponent</code>. When you build URLs with <code>navigate</code> or <code>href</code>, params are encoded for you, so values containing <code>/</code>, spaces, or other special characters round-trip safely. Unfilled <code>:name?</code> and <code>:name*</code> segments are dropped from the generated url — <code>href({ pathname: '/user/:id?' })</code> returns <code>/user</code> — while an unfilled required segment is left in place as-is.</p>
 <h3 id="navigate"><code>navigate</code></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">navigate</span><span class="p">(</span><span class="nx">to</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">navigate</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span> <span class="nx">curr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">navigate</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1">// examples
 </span></span></span><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">navigate</span><span class="p">(</span><span class="s1">&#39;/shows&#39;</span><span class="p">)</span>
@@ -219,16 +221,32 @@ Space Router packs all the features you need to keep your app in sync with the u
 <li><code>merge</code> set to true to merge in the params, query and hash from the current url</li>
 </ul>
 </li>
-<li><code>curr</code> - optional current route object to merge against, instead of reading the current url. Useful in async callbacks where the current url may have moved on by the time you navigate</li>
+<li><code>from</code> - optional route, partial route, or navigation target to merge against instead of reading the current url — where you&rsquo;re navigating from. Useful in async callbacks where the current url may have moved on by the time you navigate</li>
 </ul>
 <p>Note, if <code>url</code> option is provided, the <code>pathname</code>, <code>params</code>, <code>query</code> and <code>hash</code> will be ignored.</p>
-<p>Note, be careful when using <code>merge</code> without passing <code>curr</code> — it reads the location&rsquo;s current url, which might differ from the one you store in your application&rsquo;s state if you&rsquo;re performing async logic in the listen callback.</p>
+<p>Note, be careful when using <code>merge</code> without passing <code>from</code> — it reads the location&rsquo;s current url, which might differ from the one you store in your application&rsquo;s state if you&rsquo;re performing async logic in the listen callback.</p>
 <h3 id="match"><code>match</code></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">route</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span>
 </span></span></code></pre></div><p>Match the url string against the routes and return the matching route object.</p>
+<p>Note, the router only knows your routes once <code>listen</code> has been called — before that, <code>match</code> returns <code>undefined</code>. To match urls without listening, use <code>createMatcher</code>.</p>
+<h3 id="creatematcher"><code>createMatcher</code></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="kr">import</span> <span class="p">{</span> <span class="nx">createMatcher</span> <span class="p">}</span> <span class="nx">from</span> <span class="s1">&#39;space-router&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">matcher</span> <span class="o">=</span> <span class="nx">createMatcher</span><span class="p">(</span><span class="nx">routes</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">route</span> <span class="o">=</span> <span class="nx">matcher</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="s1">&#39;/user/7?tab=settings&#39;</span><span class="p">)</span>
+</span></span></code></pre></div><p>Create a standalone matcher without creating a router. Useful for matching urls before (or without) subscribing to url changes with <code>listen</code> — for example to compute the initial route synchronously during the first render, in server side rendering, or in tests.</p>
+<ul>
+<li><code>routes</code> - the same array of route definitions that <code>listen</code> accepts</li>
+<li><code>options</code> object
+<ul>
+<li><code>qs</code> - a custom query string parser, an object of shape <code>{ parse, stringify }</code></li>
+</ul>
+</li>
+</ul>
+<p><code>matcher.match(url)</code> returns the same <code>route</code> object as described in <a href="#listen">listen</a>, or <code>undefined</code> if no route matched.</p>
 <h3 id="href"><code>href</code></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">(</span><span class="nx">to</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span> <span class="nx">curr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1">// examples
 </span></span></span><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">(</span><span class="s1">&#39;/shows&#39;</span><span class="p">)</span>
@@ -236,16 +254,48 @@ Space Router packs all the features you need to keep your app in sync with the u
 </span></span><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">({</span> <span class="nx">pathname</span><span class="o">:</span> <span class="s1">&#39;/shows&#39;</span><span class="p">,</span> <span class="nx">query</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;most-recent&#39;</span><span class="o">:</span> <span class="mi">1</span> <span class="p">}</span> <span class="p">})</span>
 </span></span><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">({</span> <span class="nx">query</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;top-rated&#39;</span><span class="o">:</span> <span class="mi">1</span> <span class="p">},</span> <span class="nx">merge</span><span class="o">:</span> <span class="kc">true</span> <span class="p">})</span>
 </span></span><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">href</span><span class="p">({</span> <span class="nx">query</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;top-rated&#39;</span><span class="o">:</span> <span class="kc">undefined</span> <span class="p">},</span> <span class="nx">merge</span><span class="o">:</span> <span class="kc">true</span> <span class="p">})</span>
-</span></span></code></pre></div><p>Create a relative url string to use in <code>&lt;a href&gt;</code> attribute. Param values are URL-encoded so the resulting string round-trips through <code>match</code>.</p>
+</span></span></code></pre></div><p>Create a normalized, browser-facing string to use directly in an <code>&lt;a href&gt;</code> attribute. Hash-mode route hrefs include their leading <code>#</code>; ordinary fragments and external or protocol-relative URLs are returned unchanged. Param values are URL-encoded so the resulting string round-trips through <code>match</code>.</p>
 <ul>
 <li><code>to</code> object of shape <code>{ pathname, params, query, hash }</code>. The <code>params</code> will be interpolated into the pathname if the pathname contains any parametrised segments. The <code>query</code> is an object that will be passed through <code>qs.stringify</code>.</li>
-<li><code>curr</code> - optional current route to merge against when <code>to.merge</code> is set, mirroring <code>navigate(to, curr)</code>.</li>
+<li><code>from</code> - optional route, partial route, or navigation target to merge against when <code>to.merge</code> is set, mirroring <code>navigate(to, from)</code>.</li>
 </ul>
-<p>Note: <code>to</code> can be a string, in which case <code>href</code> simply returns the input. Similarly, the <code>to</code> can contain a <code>{ url }</code> key in which case <code>href</code> returns that url. This is to align the function signature with that of <code>navigate</code> so the two can be used interchangeably.</p>
+<p><code>to</code> can be a string or contain a <code>{ url }</code> key, matching <code>navigate</code>. Route targets are normalized, so <code>/shows/</code> becomes <code>/shows</code> in history and memory modes or <code>#/shows</code> in hash mode. An already formatted hash route is normalized without adding another <code>#</code>; ordinary fragments and protocol targets are left unchanged.</p>
+<h3 id="routeurl"><code>routeUrl</code></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">routeUrl</span><span class="p">(</span><span class="nx">href</span><span class="p">)</span>
+</span></span></code></pre></div><p>Convert a browser-facing href into the normalized relative url consumed by matching and routing. In history and memory mode, <code>/shows?page=2</code> stays <code>/shows?page=2</code>; in hash mode, <code>#/shows?page=2</code> becomes <code>/shows?page=2</code>. Returns <code>null</code> for ordinary fragments, protocol and protocol-relative URLs, and hrefs that do not belong to the configured routing mode.</p>
 <h3 id="geturl"><code>getUrl</code></h3>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">router</span><span class="p">.</span><span class="nx">getUrl</span><span class="p">()</span>
 </span></span></code></pre></div><p>Get the current url string. Note, this only includes the path and does not include the protocol and host.</p>
 <p>You shouldn&rsquo;t need to read this most of the time since the updates to url changes and the matching route will be provided in the <code>listen</code> callback. Be especially careful if you&rsquo;re performing asynchronous logic in your callback, such as lazily importing some modules, where you&rsquo;re then constructing links based on the current url - use route provided to your listener instead of calling <code>getUrl</code> as the url might already have been updated to another value in the meantime.</p>
+<h3 id="replaceurl"><code>replaceUrl</code></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="nx">router</span><span class="p">.</span><span class="nx">replaceUrl</span><span class="p">(</span><span class="s1">&#39;/shows?sort=top-rated&#39;</span><span class="p">)</span>
+</span></span></code></pre></div><p>Replace the current history entry with the given url, using mode-appropriate mechanics, without emitting a route change. Unlike <code>navigate({ url, replace: true })</code>, the <code>listen</code> callback will not be called. This is for callers that have already committed a route and only need the address bar to agree — e.g. after a pre-commit transform rewrote the URL. The url is normalized the same way as in <code>navigate</code>, so <code>getUrl</code> will return exactly what a <code>navigate</code> to the same target would have produced.</p>
+<h3 id="createhistory"><code>createHistory</code></h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-js" data-lang="js"><span class="line"><span class="cl"><span class="kr">import</span> <span class="p">{</span> <span class="nx">createHistory</span> <span class="p">}</span> <span class="nx">from</span> <span class="s1">&#39;space-router&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">history</span> <span class="o">=</span> <span class="nx">createHistory</span><span class="p">({</span> <span class="nx">mode</span><span class="o">:</span> <span class="s1">&#39;history&#39;</span> <span class="p">})</span>
+</span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">dispose</span> <span class="o">=</span> <span class="nx">history</span><span class="p">.</span><span class="nx">listen</span><span class="p">((</span><span class="nx">url</span><span class="p">,</span> <span class="nx">info</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">info</span><span class="p">.</span><span class="nx">traversal</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="nx">history</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s1">&#39;/foo&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nx">history</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="s1">&#39;/bar&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">history</span><span class="p">.</span><span class="nx">getUrl</span><span class="p">()</span>
+</span></span></code></pre></div><p>A lower level building block that the router uses internally. It wraps the three url sources behind a single interface — useful if you want to listen to url changes and navigate without declaring routes or matching.</p>
+<ul>
+<li><code>options</code> object
+<ul>
+<li><code>mode</code> - one of <code>history</code>, <code>hash</code>, <code>memory</code>, default is <code>history</code>. <code>memory</code> is used automatically when there is no <code>window</code>, e.g. on the server</li>
+<li><code>sync</code> - same as in <code>createRouter</code></li>
+<li><code>schedule</code> - same as in <code>createRouter</code></li>
+</ul>
+</li>
+</ul>
+<p>Returns an object with:</p>
+<ul>
+<li><code>listen(onChange)</code> - subscribe to url changes. <code>onChange(url, info)</code> receives the surviving emission&rsquo;s url and <code>{ traversal }</code> metadata. Returns a dispose function; only one listener can be attached at a time</li>
+<li><code>getUrl()</code> - the current url string</li>
+<li><code>push(url)</code> - navigate, pushing a new entry onto the navigation stack</li>
+<li><code>replace(url)</code> - navigate, replacing the current entry</li>
+<li><code>replaceSilent(url)</code> - replace the current entry without emitting a url change, backs <code>router.replaceUrl</code></li>
+</ul>
 
     </div>
   </div>
@@ -263,8 +313,12 @@ Space Router packs all the features you need to keep your app in sync with the u
         <li><a href="#patterns">Patterns</a></li>
         <li><a href="#navigate"><code>navigate</code></a></li>
         <li><a href="#match"><code>match</code></a></li>
+        <li><a href="#creatematcher"><code>createMatcher</code></a></li>
         <li><a href="#href"><code>href</code></a></li>
+        <li><a href="#routeurl"><code>routeUrl</code></a></li>
         <li><a href="#geturl"><code>getUrl</code></a></li>
+        <li><a href="#replaceurl"><code>replaceUrl</code></a></li>
+        <li><a href="#createhistory"><code>createHistory</code></a></li>
       </ul>
     </li>
   </ul>
