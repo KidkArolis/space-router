@@ -38,15 +38,13 @@ export function createRouter(options = {}) {
                             cb(undefined, info);
                         return;
                     }
-                    for (const r of route.data) {
-                        if (r.redirect) {
-                            if (++redirects > MAX_REDIRECTS) {
-                                redirects = 0;
-                                throw new Error('space-router: too many redirects');
-                            }
-                            const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect;
-                            return router.navigate({ url: router.href(target), replace: true });
+                    const target = getRouteRedirect(route);
+                    if (target !== undefined) {
+                        if (++redirects > MAX_REDIRECTS) {
+                            redirects = 0;
+                            throw new Error('space-router: too many redirects');
                         }
+                        return router.navigate({ url: router.href(target), replace: true });
                     }
                     redirects = 0;
                     if (cb)
@@ -127,6 +125,17 @@ export function createRouter(options = {}) {
         },
     };
     return router;
+}
+export function getRouteRedirect(route) {
+    for (const segment of route.data) {
+        const guarded = segment.guard?.(route);
+        if (guarded !== undefined)
+            return guarded;
+        if (segment.redirect) {
+            return typeof segment.redirect === 'function' ? segment.redirect(route) : segment.redirect;
+        }
+    }
+    return undefined;
 }
 export function createMatcher(routeMap, options = {}) {
     const routes = flatten(routeMap);

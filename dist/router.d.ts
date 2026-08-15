@@ -24,13 +24,16 @@ export interface NavigateTarget {
 }
 export type To = string | NavigateTarget;
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To);
+export type Guard<Data = Record<string, unknown>> = (route: Route<Data>) => To | void;
 export type RouteData<Data = Record<string, unknown>> = Data & {
     path: string;
     redirect?: Redirect<Data>;
+    guard?: Guard<Data>;
 };
 export type RouteDefinition<Data = Record<string, unknown>> = Data & {
     path?: string;
     redirect?: Redirect<Data>;
+    guard?: Guard<Data>;
     routes?: RouteDefinition<Data>[];
 };
 export type From = Pick<NavigateTarget, 'pathname' | 'params' | 'query' | 'hash'> & {
@@ -59,6 +62,7 @@ interface FlatRoute<Data = Record<string, unknown>> {
     data: RouteData<Data>[];
 }
 export declare function createRouter<Data = Record<string, unknown>>(options?: RouterOptions): Router<Data>;
+export declare function getRouteRedirect<Data>(route: Route<Data>): To | undefined;
 export declare function createMatcher<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[], options?: MatcherOptions): Matcher<Data>;
 export declare function flatten<Data = Record<string, unknown>>(routeMap: RouteDefinition<Data>[]): FlatRoute<Data>[];
 export declare function merge(from: From | undefined, to: NavigateTarget): NavigateTarget;

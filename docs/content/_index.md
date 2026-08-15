@@ -108,6 +108,7 @@ Note, calling listen will right away call `onChange` based on the current url wh
 - `routes` an array of route definitions, where each route is an object of shape `{ path, redirect, routes, ...metadata }`
   - `path` is the url pattern to match that can include named parameters as segments — see [Patterns](#patterns)
   - `redirect` can be a string, a `to` object, or a function `(route) => to` that redirects upon entering that route. Cyclic redirects are capped (an error is thrown after 10 hops)
+  - `guard` is a function `(route) => to | undefined` that runs parent-first before redirects. Returning a target redirects before entering the route; returning `undefined` admits the segment and continues checking its children
   - `routes` is a nested array of nested route definitions
   - `...metadata` any other keys can be chosen by you
 - `onChange` is called with the matched `route` (or `undefined`) and `{ traversal }` navigation info

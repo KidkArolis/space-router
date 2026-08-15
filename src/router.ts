@@ -31,14 +31,18 @@ export type To = string | NavigateTarget
 
 export type Redirect<Data = Record<string, unknown>> = To | ((route: Route<Data>) => To)
 
+export type Guard<Data = Record<string, unknown>> = (route: Route<Data>) => To | void
+
 export type RouteData<Data = Record<string, unknown>> = Data & {
   path: string
   redirect?: Redirect<Data>
+  guard?: Guard<Data>
 }
 
 export type RouteDefinition<Data = Record<string, unknown>> = Data & {
   path?: string
   redirect?: Redirect<Data>
+  guard?: Guard<Data>
   routes?: RouteDefinition<Data>[]
 }
 
@@ -112,15 +116,13 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
             if (cb) cb(undefined, info)
             return
           }
-          for (const r of route.data) {
-            if (r.redirect) {
-              if (++redirects > MAX_REDIRECTS) {
-                redirects = 0
-                throw new Error('space-router: too many redirects')
-              }
-              const target = typeof r.redirect === 'function' ? r.redirect(route) : r.redirect
-              return router.navigate({ url: router.href(target), replace: true })
+          const target = getRouteRedirect(route)
+          if (target !== undefined) {
+            if (++redirects > MAX_REDIRECTS) {
+              redirects = 0
+              throw new Error('space-router: too many redirects')
             }
+            return router.navigate({ url: router.href(target), replace: true })
           }
           redirects = 0
           if (cb) cb(route, info)
@@ -208,6 +210,17 @@ export function createRouter<Data = Record<string, unknown>>(options: RouterOpti
   }
 
   return router
+}
+
+export function getRouteRedirect<Data>(route: Route<Data>): To | undefined {
+  for (const segment of route.data) {
+    const guarded = segment.guard?.(route)
+    if (guarded !== undefined) return guarded
+    if (segment.redirect) {
+      return typeof segment.redirect === 'function' ? segment.redirect(route) : segment.redirect
+    }
+  }
+  return undefined
 }
 
 export function createMatcher<Data = Record<string, unknown>>(

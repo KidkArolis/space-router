@@ -222,6 +222,32 @@ test('redirects', (t) => {
   dispose()
 })
 
+test('guards run parent-first and admitted guards continue to child redirects', (t) => {
+  const destinations: string[] = []
+  let admitted = false
+  const router = createRouter({ mode: 'memory', sync: true })
+  const dispose = router.listen(
+    [
+      {
+        guard: () => (admitted ? undefined : '/login'),
+        routes: [
+          { path: '/private', datum: 'private' },
+          { path: '/legacy', redirect: '/private' },
+        ],
+      },
+      { path: '/login', datum: 'login' },
+    ],
+    (route) => destinations.push(route?.url ?? 'unmatched'),
+  )
+
+  router.navigate('/legacy')
+  admitted = true
+  router.navigate('/legacy')
+
+  t.deepEqual(destinations, ['/login', '/private'])
+  dispose()
+})
+
 test('redirects emit only the final matched or unmatched destination metadata', (t) => {
   const calls: { url: string | undefined; traversal: boolean }[] = []
   const router = createRouter({ mode: 'memory', sync: true })
