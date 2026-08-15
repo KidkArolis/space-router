@@ -1,4 +1,4 @@
-## 2.0.1
+## 2.1.0
 
 - optional parent-first route guards can redirect before entering a matched route, or return `undefined` to admit it and continue checking nested segments.
 
