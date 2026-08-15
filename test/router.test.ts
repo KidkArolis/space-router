@@ -1,5 +1,5 @@
 import test from 'ava'
-import { qs, createMatcher, createRouter } from '../src/index.ts'
+import { qs, createMatcher, createRouter, getRouteRedirect } from '../src/index.ts'
 import type { NavigationInfo, Route, RouteDefinition, Router } from '../src/index.ts'
 
 interface TestRouteData {
@@ -220,6 +220,38 @@ test('redirects', (t) => {
   t.deepEqual(['bar', 'user=1', 'user=2', 'foo'], calls)
 
   dispose()
+})
+
+test('guards run parent-first and admitted guards continue to child redirects', (t) => {
+  const destinations: string[] = []
+  let admitted = false
+  const router = createRouter({ mode: 'memory', sync: true })
+  const dispose = router.listen(
+    [
+      {
+        guard: () => (admitted ? undefined : '/login'),
+        routes: [
+          { path: '/private', datum: 'private' },
+          { path: '/legacy', redirect: '/private' },
+        ],
+      },
+      { path: '/login', datum: 'login' },
+    ],
+    (route) => destinations.push(route?.url ?? 'unmatched'),
+  )
+
+  router.navigate('/legacy')
+  admitted = true
+  router.navigate('/legacy')
+
+  t.deepEqual(destinations, ['/login', '/private'])
+  dispose()
+})
+
+test('guards run before redirects on the same segment', (t) => {
+  const route = createMatcher([{ path: '/legacy', guard: () => '/login', redirect: '/private' }]).match('/legacy')!
+
+  t.is(getRouteRedirect(route), '/login')
 })
 
 test('redirects emit only the final matched or unmatched destination metadata', (t) => {

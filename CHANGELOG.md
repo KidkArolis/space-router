@@ -1,3 +1,7 @@
+## 2.1.0
+
+- optional parent-first route guards can redirect before entering a matched route, or return `undefined` to admit it and continue checking nested segments.
+
 ## 2.0.0
 
 - `href(to, from)` now returns a normalized, browser-facing href: hash-mode route targets are prefixed with `#`, while ordinary fragments and protocol or protocol-relative URLs are left unchanged. Already formatted hash routes are normalized without double-prefixing, and `navigate` accepts the resulting hrefs directly.
