@@ -1,0 +1,5 @@
+[tool_alias.hugo]
+backend = "aqua:gohugoio/hugo/hugo-extended"
+
+[tools]
+hugo = "0.167.0"

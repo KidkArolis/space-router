@@ -43,9 +43,11 @@
     "coverage": "c8 --reporter=html ava",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "watch": "tsc -p tsconfig.build.json --watch",
-    "release": "np --no-release-draft",
-    "release:beta": "np --tag=beta --no-release-draft",
-    "release:docs": "hugo -s docs && gh-pages -d docs/public"
+    "release": "np --no-publish --no-release-draft",
+    "release:next": "np --tag=next --no-publish --no-release-draft",
+    "docs": "mise exec -- hugo server -s docs",
+    "docs:build": "mise exec -- hugo -s docs",
+    "docs:release": "npm run docs:build && gh-pages -d docs/public"
   },
   "devDependencies": {
     "ava": "^8.0.1",

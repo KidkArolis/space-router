@@ -1,7 +1,8 @@
 baseURL = "https://kidkarolis.github.io/space-router"
-languageCode = "en-us"
+locale = "en-US"
 title = "Space Router"
 description = "A web router with all the essentials."
+disableKinds = ["taxonomy", "term"]
 
 [markup]
   [markup.highlight]
