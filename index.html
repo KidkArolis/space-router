@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html lang="en-US">
 
 <head>
-  <meta name="generator" content="Hugo 0.155.1">
+  <meta name="generator" content="Hugo 0.167.0">
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,12 +21,12 @@
 
 
   <meta property="og:url" content="https://kidkarolis.github.io/space-router/">
-  <meta property="og:site_name" content="Space Router">
-  <meta property="og:title" content="Space Router">
-  <meta property="og:description" content="Space Router Framework agnostic router for single page apps
+	<meta property="og:site_name" content="Space Router">
+	<meta property="og:title" content="Space Router">
+	<meta property="og:description" content="Space Router Framework agnostic router for single page apps
 Space Router packs all the features you need to keep your app in sync with the url. It’s distinct from many other routers in that there is only a single callback. This callback can be used to re-render your application, update a store and perform other actions on each url change. Space Router is stateless, it doesn’t store the current route leaving state completely up to you to handle.">
-  <meta property="og:locale" content="en_us">
-  <meta property="og:type" content="website">
+	<meta property="og:locale" content="en_US">
+	<meta property="og:type" content="website">
 
   
 
@@ -169,6 +169,7 @@ Space Router packs all the features you need to keep your app in sync with the u
 <ul>
 <li><code>path</code> is the url pattern to match that can include named parameters as segments — see <a href="#patterns">Patterns</a></li>
 <li><code>redirect</code> can be a string, a <code>to</code> object, or a function <code>(route) =&gt; to</code> that redirects upon entering that route. Cyclic redirects are capped (an error is thrown after 10 hops)</li>
+<li><code>guard</code> is a function <code>(route) =&gt; to | undefined</code> that runs parent-first before redirects. Returning a target redirects before entering the route; returning <code>undefined</code> admits the segment and continues checking its children</li>
 <li><code>routes</code> is a nested array of nested route definitions</li>
 <li><code>...metadata</code> any other keys can be chosen by you</li>
 </ul>
