@@ -3,7 +3,6 @@ export function createHistory(options = {}) {
     let mode = options.mode || 'history';
     let active;
     let seq = 0;
-    let selfNavs = 0;
     const memory = [];
     if (typeof window === 'undefined') {
         mode = 'memory';
@@ -23,14 +22,6 @@ export function createHistory(options = {}) {
                 emit(info);
         }, info);
     }
-    function onTraversal() {
-        // a hashchange caused by our own push/replace is a navigation,
-        // not a back/forward traversal
-        const traversal = selfNavs === 0;
-        if (selfNavs > 0)
-            selfNavs--;
-        scheduleEmit(traversal);
-    }
     function listen(onChange) {
         if (active)
             throw new Error('Already listening');
@@ -45,7 +36,19 @@ export function createHistory(options = {}) {
         };
         try {
             if (mode !== 'memory') {
-                subscription.off = on(window, mode === 'history' ? 'popstate' : 'hashchange', onTraversal);
+                subscription.hashUrl = location.href;
+                subscription.off = on(window, mode === 'history' ? 'popstate' : 'hashchange', (event) => {
+                    if (mode === 'hash') {
+                        const url = event.newURL;
+                        // Hash writes are synchronous, but events arrive in later tasks.
+                        // Ignore superseded URLs and changes already observed by a write
+                        // or this subscription's initial emit (including old queued events).
+                        if (url !== location.href || url === subscription.hashUrl)
+                            return;
+                        subscription.hashUrl = url;
+                    }
+                    scheduleEmit(true);
+                });
                 scheduleEmit(false);
             }
         }
@@ -62,15 +65,10 @@ export function createHistory(options = {}) {
             scheduleEmit(false);
         }
         else if (mode === 'hash') {
-            // hashchange only fires when the URL actually changes; if it doesn't,
-            // we schedule the emit manually so navigation stays consistent with
-            // history mode (where pushState is silent and we always schedule).
-            const same = url === getUrl();
-            if (!same)
-                selfNavs++;
             location[replace ? 'replace' : 'assign']('#' + url);
-            if (same)
-                scheduleEmit(false);
+            if (active)
+                active.hashUrl = location.href;
+            scheduleEmit(false);
         }
         else if (mode === 'memory') {
             if (replace && memory.length) {
@@ -112,6 +110,8 @@ export function createHistory(options = {}) {
         else if (mode === 'hash') {
             // a bare fragment url leaves the page's pathname and search untouched
             history.replaceState({}, '', '#' + url);
+            if (active)
+                active.hashUrl = location.href;
         }
         else if (mode === 'memory') {
             if (memory.length) {
@@ -135,7 +135,11 @@ export function createHistory(options = {}) {
     };
 }
 export function normalizeRouteUrl(url) {
-    return url.replace(/^\/?#?\/?/, '/').replace(/\/$/, '') || '/';
+    url = url.replace(/^\/?(?:#\/)?/, '/');
+    const suffixIndex = url.search(/[?#]/);
+    const pathname = suffixIndex < 0 ? url : url.slice(0, suffixIndex);
+    const suffix = suffixIndex < 0 ? '' : url.slice(suffixIndex);
+    return (pathname.replace(/\/$/, '') || '/') + suffix;
 }
 function on(el, type, fn) {
     el.addEventListener(type, fn, false);

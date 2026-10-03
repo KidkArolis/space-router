@@ -1,3 +1,9 @@
+## 2.1.1
+
+- preserve query values and fragments when normalizing trailing slashes.
+- keep the current pathname when merging a catch-all route.
+- coalesce hash navigations and prevent queued hash events from leaking across subscriptions or mislabeling traversals.
+
 ## 2.1.0
 
 - optional parent-first route guards can redirect before entering a matched route, or return `undefined` to admit it and continue checking nested segments.

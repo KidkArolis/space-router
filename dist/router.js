@@ -179,7 +179,8 @@ export function flatten(routeMap) {
 }
 export function merge(from, to) {
     const c = from || {};
-    const pathname = to.pathname || c.pattern || c.pathname;
+    // A catch-all is not a URL template — keep the concrete pathname.
+    const pathname = to.pathname || (c.pattern === '*' ? c.pathname : c.pattern || c.pathname);
     const params = Object.assign({}, c.params, to.params);
     const query = to.query === null ? null : Object.assign({}, c.query, to.query);
     const hash = to.hash === null ? null : to.hash || c.hash || '';

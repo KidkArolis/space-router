@@ -17,7 +17,7 @@ In summary, Space Router:
 - supports nested routes and arbitrary route metadata
 - fits into a wide range of application architectures and frameworks
 - ships TypeScript types
-- has no dependencies and weighs less than 2kb
+- has no dependencies and weighs less than 2.5kb
 
 ## Why?
 

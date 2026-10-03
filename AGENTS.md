@@ -28,7 +28,7 @@ If the casts ever truly need to go, constrain the generic
 
 ## General bar for changes
 
-The identity is "<2kb, no dependencies, learnable in one sitting". Matching is
+The identity is "<2.5kb, no dependencies, learnable in one sitting". Matching is
 definition-order, first-match-wins — deliberate, not legacy; specificity
 ranking only pays off when routes compose from multiple sources, which this
 router doesn't do. Prefer a line of documentation over a runtime guard, and a

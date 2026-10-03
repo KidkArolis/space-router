@@ -3,10 +3,15 @@ import { createHistory } from '../src/history.ts'
 
 type BrowserGlobal = 'window' | 'location' | 'history'
 type BrowserEvent = 'hashchange' | 'popstate'
-type EventHandler = () => void
+type EventHandler = (event: { oldURL?: string; newURL?: string }) => void
 
 interface TraversalControls {
   back(url: string): void
+}
+
+interface HashControls extends TraversalControls {
+  flush(): Promise<void>
+  flushOne(): Promise<void>
 }
 
 function withBrowserGlobals<Result>(replacements: Record<BrowserGlobal, unknown>, fn: () => Result): Result {
@@ -48,8 +53,8 @@ function createFakeWindow() {
         if (index >= 0) handlers[type].splice(index, 1)
       },
     },
-    fire(type: BrowserEvent) {
-      for (const handler of handlers[type]) handler()
+    fire(type: BrowserEvent, event = {}) {
+      for (const handler of handlers[type].slice()) handler(event)
     },
   }
 }
@@ -70,11 +75,18 @@ function withFakeDom<Result>(href: string, fn: () => Result): Result {
 }
 
 // Richer fake DOM for hash-mode tests: addEventListener actually wires up
-// listeners, and location.assign/replace fire hashchange iff the hash changes
-// (mirroring real browser behavior).
-function withFakeHashDom<Result>(fn: (controls: TraversalControls) => Result): Result {
+// listeners. Hash writes update location synchronously but queue separate
+// hashchange tasks; flush runs a microtask checkpoint after each event.
+async function withFakeHashDom(fn: (controls: HashControls) => void | Promise<void>): Promise<void> {
   let hash = ''
   const { window, fire } = createFakeWindow()
+  const events: { oldURL: string; newURL: string }[] = []
+  function change(target: string) {
+    if (target === hash) return
+    const oldURL = location.href
+    hash = target
+    events.push({ oldURL, newURL: location.href })
+  }
   const location = {
     get href() {
       return 'http://x.com/' + hash
@@ -85,16 +97,10 @@ function withFakeHashDom<Result>(fn: (controls: TraversalControls) => Result): R
     pathname: '/',
     search: '',
     assign(target: string) {
-      if (target !== hash) {
-        hash = target
-        fire('hashchange')
-      }
+      change(target)
     },
     replace(target: string) {
-      if (target !== hash) {
-        hash = target
-        fire('hashchange')
-      }
+      change(target)
     },
   }
   const history = {
@@ -108,11 +114,37 @@ function withFakeHashDom<Result>(fn: (controls: TraversalControls) => Result): R
 
   // simulates a browser back/forward traversal on a hash url
   function back(target: string) {
-    hash = target
-    fire('hashchange')
+    change(target.startsWith('#') ? target : '#' + target)
   }
 
-  return withBrowserGlobals({ window, location, history }, () => fn({ back }))
+  async function flushOne() {
+    // Microtasks from synchronous writes run before the first queued event.
+    await Promise.resolve()
+    const event = events.shift()
+    if (event) fire('hashchange', event)
+    await Promise.resolve()
+  }
+
+  async function flush() {
+    await Promise.resolve()
+    while (events.length) await flushOne()
+  }
+
+  // Keep the globals installed until all asynchronous checks finish.
+  const previous = Object.fromEntries(
+    ['window', 'location', 'history'].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
+  )
+  try {
+    for (const [name, value] of Object.entries({ window, location, history })) {
+      Object.defineProperty(globalThis, name, { configurable: true, writable: true, value })
+    }
+    await fn({ back, flush, flushOne })
+  } finally {
+    for (const [name, descriptor] of Object.entries(previous)) {
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor)
+      else Reflect.deleteProperty(globalThis, name)
+    }
+  }
 }
 
 // Fake DOM for history-mode scheduling tests: addEventListener is wired up,
@@ -227,13 +259,14 @@ test.serial('a throwing initial listener does not poison future subscriptions', 
   })
 })
 
-test.serial('hash mode emits when navigating to the current URL', (t) => {
+test.serial('hash mode emits when navigating to the current URL', async (t) => {
   const calls: string[] = []
-  withFakeHashDom(() => {
+  await withFakeHashDom(async ({ flush }) => {
     const h = createHistory({ mode: 'hash', sync: true })
     h.listen((url) => calls.push(url))
-    h.push('/foo') // different from current ('/'), browser hashchange drives the emit
+    h.push('/foo') // different from current ('/'), synchronous write schedules the emit
     h.push('/foo') // same as current, no hashchange — manual schedule drives the emit
+    await flush()
   })
   t.deepEqual(calls, ['/', '/foo', '/foo'])
 })
@@ -275,10 +308,10 @@ test.serial('history listener receives initial, navigation, and traversal metada
   ])
 })
 
-test.serial('hash mode scheduler receives traversal false for own push, true for external hashchange', (t) => {
+test.serial('hash mode scheduler receives traversal false for own push, true for external hashchange', async (t) => {
   const seen: boolean[] = []
   const calls: string[] = []
-  withFakeHashDom(({ back }) => {
+  await withFakeHashDom(async ({ back, flush }) => {
     const h = createHistory({
       mode: 'hash',
       schedule: (fire, { traversal }) => {
@@ -290,19 +323,21 @@ test.serial('hash mode scheduler receives traversal false for own push, true for
     h.push('/foo') // fires hashchange, but it's our own navigation
     h.push('/foo') // no hashchange, manual schedule
     back('/') // back/forward traversal
+    await flush()
   })
   t.deepEqual(seen, [false, false, false, true])
   t.deepEqual(calls, ['/', '/foo', '/foo', '/'])
 })
 
-test.serial('hash listener distinguishes self-created hash changes from traversal', (t) => {
+test.serial('hash listener distinguishes self-created hash changes from traversal', async (t) => {
   const calls: { url: string; traversal: boolean }[] = []
-  withFakeHashDom(({ back }) => {
+  await withFakeHashDom(async ({ back, flush }) => {
     const h = createHistory({ mode: 'hash', sync: true })
     h.listen((url, info) => calls.push({ url, traversal: info.traversal }))
     h.push('/foo')
     h.push('/foo')
     back('/')
+    await flush()
   })
   t.deepEqual(calls, [
     { url: '/', traversal: false },
@@ -347,6 +382,33 @@ test.serial('a deferred traversal emit fires with the current url when not super
   t.deepEqual(calls, ['/away'])
 })
 
+for (const mode of ['history', 'hash', 'memory'] as const) {
+  test.serial(`${mode} navigation preserves query and fragment slashes`, async (t) => {
+    function check() {
+      const h = createHistory({ mode, sync: true })
+      const calls: string[] = []
+      const dispose = h.listen((url) => calls.push(url))
+      calls.length = 0
+      h.push('/login/?returnTo=/')
+      t.is(h.getUrl(), '/login?returnTo=/')
+      h.replace('/docs/#section/')
+      t.is(h.getUrl(), '/docs#section/')
+      h.replaceSilent('/docs/?returnTo=/#section/')
+      t.is(h.getUrl(), '/docs?returnTo=/#section/')
+      t.deepEqual(calls, ['/login?returnTo=/', '/docs#section/'])
+      dispose()
+    }
+
+    if (mode === 'history') withFakeHistoryDom(check)
+    else if (mode === 'hash')
+      await withFakeHashDom(async ({ flush }) => {
+        check()
+        await flush()
+      })
+    else check()
+  })
+}
+
 test('a burst of pushes coalesces into a single emit with the default scheduler', async (t) => {
   const calls: string[] = []
   const h = createHistory({ mode: 'memory' })
@@ -357,6 +419,158 @@ test('a burst of pushes coalesces into a single emit with the default scheduler'
   t.deepEqual(calls, [])
   await Promise.resolve()
   t.deepEqual(calls, ['/c'])
+})
+
+test.serial('hash writes coalesce before queued hashchange tasks and never emit again from those tasks', async (t) => {
+  await withFakeHashDom(async ({ flushOne, flush }) => {
+    const calls: { url: string; traversal: boolean }[] = []
+    const h = createHistory({ mode: 'hash' })
+    h.listen((url, info) => calls.push({ url, ...info }))
+    h.push('/a')
+    h.replace('/b')
+    h.push('/c')
+    t.is(h.getUrl(), '/c', 'location updates synchronously')
+    t.deepEqual(calls, [])
+    await Promise.resolve()
+    t.deepEqual(calls, [{ url: '/c', traversal: false }], 'initial emit is superseded too')
+    await flushOne()
+    await flush()
+    t.deepEqual(calls, [{ url: '/c', traversal: false }])
+  })
+})
+
+for (const navigation of ['push', 'replace'] as const) {
+  test.serial(`hash ${navigation} before listening does not leak suppression into later traversals`, async (t) => {
+    await withFakeHashDom(async ({ back, flush }) => {
+      const h = createHistory({ mode: 'hash', sync: true })
+      h[navigation]('/a')
+      const calls: { url: string; traversal: boolean }[] = []
+      h.listen((url, info) => calls.push({ url, ...info }))
+      await flush()
+      t.deepEqual(calls, [{ url: '/a', traversal: false }], 'old queued event does not reach new listener')
+      back('/')
+      await flush()
+      t.deepEqual(calls, [
+        { url: '/a', traversal: false },
+        { url: '/', traversal: true },
+      ])
+    })
+  })
+}
+
+test.serial('hash navigation tasks drained without a listener cannot poison a later subscription', async (t) => {
+  await withFakeHashDom(async ({ back, flush }) => {
+    const h = createHistory({ mode: 'hash', sync: true })
+    h.push('/before')
+    await flush()
+    const dispose = h.listen(() => {})
+    h.replace('/disposed')
+    dispose()
+    await flush()
+    const calls: { url: string; traversal: boolean }[] = []
+    h.listen((url, info) => calls.push({ url, ...info }))
+    back('/')
+    await flush()
+    t.deepEqual(calls, [
+      { url: '/disposed', traversal: false },
+      { url: '/', traversal: true },
+    ])
+  })
+})
+
+test.serial('queued external hash changes observe only the final changed URL', async (t) => {
+  await withFakeHashDom(async ({ back, flush }) => {
+    const calls: { url: string; traversal: boolean }[] = []
+    const h = createHistory({ mode: 'hash' })
+    h.listen((url, info) => calls.push({ url, ...info }))
+    await flush()
+    calls.length = 0
+    back('/a')
+    back('/b')
+    await flush()
+    t.deepEqual(calls, [{ url: '/b', traversal: true }])
+    back('/a')
+    back('/b')
+    await flush()
+    t.deepEqual(calls, [{ url: '/b', traversal: true }], 'a net-zero burst has no new URL to deliver')
+  })
+})
+
+test.serial('hash disposal and reattachment ignore old navigation and traversal tasks', async (t) => {
+  await withFakeHashDom(async ({ back, flush }) => {
+    const h = createHistory({ mode: 'hash', sync: true })
+    const old: string[] = []
+    const dispose = h.listen((url) => old.push(url))
+    h.push('/a')
+    back('/b')
+    dispose()
+    const calls: { url: string; traversal: boolean }[] = []
+    h.listen((url, info) => calls.push({ url, ...info }))
+    await flush()
+    t.deepEqual(old, ['/', '/a'])
+    t.deepEqual(calls, [{ url: '/b', traversal: false }])
+    back('/a')
+    await flush()
+    t.deepEqual(calls, [
+      { url: '/b', traversal: false },
+      { url: '/a', traversal: true },
+    ])
+  })
+})
+
+test.serial('hash traversal supersedes pending navigation with traversal metadata', async (t) => {
+  await withFakeHashDom(async ({ back, flush }) => {
+    const calls: { url: string; traversal: boolean }[] = []
+    const deferred: (() => void)[] = []
+    const seen: boolean[] = []
+    const h = createHistory({
+      mode: 'hash',
+      schedule: (fire, { traversal }) => {
+        seen.push(traversal)
+        deferred.push(fire)
+      },
+    })
+    h.listen((url, info) => calls.push({ url, ...info }))
+    h.push('/a')
+    back('/')
+    await flush()
+    for (const fire of deferred) fire()
+    t.deepEqual(seen, [false, false, true])
+    t.deepEqual(calls, [{ url: '/', traversal: true }])
+  })
+})
+
+test.serial('hash push supersedes a custom deferred traversal emit', async (t) => {
+  await withFakeHashDom(async ({ back, flush }) => {
+    const calls: { url: string; traversal: boolean }[] = []
+    const deferred: (() => void)[] = []
+    const h = createHistory({
+      mode: 'hash',
+      schedule: (fire, { traversal }) => (traversal ? deferred.push(fire) : fire()),
+    })
+    h.listen((url, info) => calls.push({ url, ...info }))
+    calls.length = 0
+    back('/away')
+    await flush()
+    t.deepEqual(calls, [])
+    h.push('/pushed')
+    await flush()
+    for (const fire of deferred) fire()
+    t.deepEqual(calls, [{ url: '/pushed', traversal: false }])
+  })
+})
+
+test.serial('hash replaceSilent suppresses queued changes even when it restores their target URL', async (t) => {
+  await withFakeHashDom(async ({ back, flush }) => {
+    const calls: string[] = []
+    const h = createHistory({ mode: 'hash', sync: true })
+    h.listen((url) => calls.push(url))
+    back('/a')
+    back('/b')
+    h.replaceSilent('/a')
+    await flush()
+    t.deepEqual(calls, ['/'])
+  })
 })
 
 test('explicit schedule takes precedence over sync', (t) => {
@@ -390,9 +604,9 @@ test.serial('replaceSilent in history mode updates the url without scheduling an
   t.deepEqual(calls, ['/'])
 })
 
-test.serial('replaceSilent in hash mode rewrites only the fragment without emitting', (t) => {
+test.serial('replaceSilent in hash mode rewrites only the fragment without emitting', async (t) => {
   const calls: string[] = []
-  withFakeHashDom(() => {
+  await withFakeHashDom(async ({ flush }) => {
     const h = createHistory({ mode: 'hash', sync: true })
     h.listen((url) => calls.push(url))
     h.push('/a')
@@ -401,6 +615,7 @@ test.serial('replaceSilent in hash mode rewrites only the fragment without emitt
     t.is(location.hash, '#/b?x=1')
     t.is(location.pathname + location.search, '/', 'path and search untouched')
     t.is(h.getUrl(), '/b?x=1')
+    await flush()
   })
   t.deepEqual(calls, [], 'no hashchange fired, no emit scheduled')
 })

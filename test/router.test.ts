@@ -116,6 +116,44 @@ test('href returns browser-facing urls in each mode', (t) => {
   }
 })
 
+test('href and routeUrl normalize only the pathname, preserving query and fragment slashes', (t) => {
+  for (const mode of ['history', 'memory', 'hash'] as const) {
+    const router = createRouter({ mode })
+    const prefix = mode === 'hash' ? '#' : ''
+    for (const [input, expected] of [
+      ['/login?returnTo=/', '/login?returnTo=/'],
+      ['/docs/#section/', '/docs#section/'],
+      ['/docs/?returnTo=/#section/', '/docs?returnTo=/#section/'],
+      ['/?returnTo=/', '/?returnTo=/'],
+      ['/#section/', '/#section/'],
+      ['/docs/?', '/docs?'],
+      ['/docs/#', '/docs#'],
+    ]) {
+      t.is(router.href(input), prefix + expected)
+      t.is(router.routeUrl(prefix + input), expected)
+    }
+    t.is(router.href({ pathname: '/docs/', hash: 'section/' }), prefix + '/docs#section/')
+  }
+})
+
+test('merging a catch-all match preserves its pathname, query and hash', (t) => {
+  for (const mode of ['history', 'memory', 'hash'] as const) {
+    const router = createRouter({ mode, sync: true })
+    const prefix = mode === 'hash' ? '#' : ''
+    const calls: string[] = []
+    const dispose = router.listen([{ path: '*' }], (route) => calls.push(route!.url))
+
+    router.navigate('/missing?old=1#section/')
+    t.is(router.href({ merge: true, query: { page: 2 } }), prefix + '/missing?old=1&page=2#section/')
+    router.navigate({ merge: true, query: { page: 2 } })
+    t.is(router.getUrl(), '/missing?old=1&page=2#section/')
+    t.deepEqual(calls, ['/missing?old=1#section/', '/missing?old=1&page=2#section/'])
+
+    t.is(router.href({ merge: true, pathname: '/elsewhere', query: null, hash: null }), prefix + '/elsewhere')
+    dispose()
+  }
+})
+
 test('routeUrl converts only browser hrefs owned by the configured mode', (t) => {
   const history = createRouter({ mode: 'history' })
   const memory = createRouter({ mode: 'memory' })
