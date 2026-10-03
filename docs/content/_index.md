@@ -192,9 +192,28 @@ Create a standalone matcher without creating a router. Useful for matching urls 
 
 - `routes` - the same array of route definitions that `listen` accepts
 - `options` object
-  - `qs` - a custom query string parser, an object of shape `{ parse, stringify }`
+  - `qs` - a custom query string codec, an object of shape `{ parse, stringify }`. Defaults to the native `URLSearchParams`-based [query codec](#query-strings)
 
 `matcher.match(url)` returns the same `route` object as described in [listen](#listen), or `undefined` if no route matched.
+
+### Query strings
+
+The exported `qs` codec uses native `URLSearchParams` semantics and is the default for routers and standalone matchers:
+
+```js
+import { qs } from 'space-router'
+
+qs.stringify({ q: 'hello world', omitted: undefined }) // 'q=hello+world'
+qs.parse('?q=hello+world&tag=one&tag=two') // { q: 'hello world', tag: 'two' }
+```
+
+Parsing returns an object of string values, accepts an optional leading `?`, and keeps the last value for duplicate keys. Keys without `=` have an empty value. Prototype-named keys such as `__proto__` are preserved as own properties.
+
+Stringification skips `undefined` and converts every other value to a string (including `null` as `'null'`). It uses form encoding: spaces become `+`, literal plus signs become `%2B`, and punctuation such as `~`, `!`, `'`, `(`, and `)` is percent-encoded. Path parameters still use `encodeURIComponent`, so spaces in paths remain `%20`.
+
+Malformed query encoding follows native decoding: invalid percent escapes such as `%zz` remain literal, while malformed UTF-8 can become replacement characters (`�`). Lone surrogates are also replaced during stringification instead of throwing.
+
+Matchers call `parse` only for the first matching path with a nonempty query string; rejected candidates and unmatched URLs do not invoke it.
 
 ### `href`
 
@@ -269,3 +288,5 @@ Returns an object with:
 - `push(url)` - navigate, pushing a new entry onto the navigation stack
 - `replace(url)` - navigate, replacing the current entry
 - `replaceSilent(url)` - replace the current entry without emitting a url change, backs `router.replaceUrl`
+
+In memory mode, only the current URL is retained; there is no back/forward stack. `push` and `replace` both update that URL and notify the listener, while `replaceSilent` updates it without notifying. Before the first navigation, `getUrl()` returns `''`.

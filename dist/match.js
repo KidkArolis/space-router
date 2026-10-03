@@ -2,22 +2,11 @@ export function matchOne(pattern, url, qs) {
     if (!pattern)
         return;
     const re = /(?:\?([^#]*))?(#.*)?$/;
-    const originalUrl = url;
-    const originalPattern = pattern;
     const c = url.match(re);
+    const pathname = url.replace(re, '');
     const params = {};
-    let query = {};
-    let search = '';
-    let hash = '';
-    if (c && c[1]) {
-        search = '?' + c[1];
-        query = qs ? qs.parse(c[1]) : {};
-    }
-    if (c && c[2]) {
-        hash = c[2];
-    }
     if (pattern !== '*') {
-        const urlSegs = segmentize(url.replace(re, ''));
+        const urlSegs = segmentize(pathname);
         const patSegs = segmentize(pattern);
         const max = Math.max(urlSegs.length, patSegs.length);
         for (let i = 0; i < max; i++) {
@@ -42,13 +31,13 @@ export function matchOne(pattern, url, qs) {
         }
     }
     return {
-        pattern: originalPattern,
-        url: originalUrl,
-        pathname: originalUrl.replace(re, ''),
+        pattern,
+        url,
+        pathname,
         params,
-        query,
-        search,
-        hash,
+        query: c?.[1] && qs ? qs.parse(c[1]) : {},
+        search: c?.[1] ? '?' + c[1] : '',
+        hash: c?.[2] || '',
     };
 }
 // malformed percent-encoding (e.g. '%zz' typed into the address bar) must

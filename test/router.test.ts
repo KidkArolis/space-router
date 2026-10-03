@@ -227,6 +227,52 @@ test('createMatcher matches routes without history or listen', (t) => {
   })
 })
 
+test('createMatcher parses queries only for the first matching route', (t) => {
+  const calls: string[] = []
+  const matcher = createMatcher([{ path: '/one' }, { path: '/two' }, { path: '*' }], {
+    qs: {
+      parse(search) {
+        calls.push(search)
+        return { custom: search }
+      },
+      stringify: qs.stringify,
+    },
+  })
+
+  t.deepEqual(matcher.match('/two?a=1#fragment')?.query, { custom: 'a=1' })
+  t.deepEqual(calls, ['a=1'])
+  t.deepEqual(matcher.match('/other?a=2')?.query, { custom: 'a=2' })
+  t.deepEqual(calls, ['a=1', 'a=2'])
+  matcher.match('/one')
+  matcher.match('/two?')
+  t.deepEqual(calls, ['a=1', 'a=2'])
+
+  const noMatch = createMatcher([{ path: '/one' }], {
+    qs: {
+      parse() {
+        t.fail('unmatched urls must not invoke the parser')
+        return {}
+      },
+      stringify: qs.stringify,
+    },
+  })
+  t.is(noMatch.match('/other?a=1'), undefined)
+})
+
+test('href and matching roundtrip native query encoding without changing path encoding', (t) => {
+  const router = createRouter({ mode: 'memory', sync: true })
+  const dispose = router.listen([{ path: '/user/:id' }])
+  const href = router.href({ pathname: '/user/:id', params: { id: 'a b' }, query: { q: 'x y+~' } })
+
+  t.is(href, '/user/a%20b?q=x+y%2B%7E')
+  router.navigate(href)
+  const route = router.match(router.getUrl())
+  t.deepEqual(route?.params, { id: 'a b' })
+  t.deepEqual(route?.query, { q: 'x y+~' })
+  t.is(route?.search, '?q=x+y%2B%7E')
+  dispose()
+})
+
 test('.match(url) without catch all', (t) => {
   const { router, dispose } = createTestRouter(undefined, { withoutCatchAll: true })
 

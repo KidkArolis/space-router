@@ -210,6 +210,23 @@ test('memory mode replace before any push creates the first entry', (t) => {
   t.is(h.getUrl(), '/bar')
 })
 
+test('memory mode retains the latest url and only silent replacement suppresses delivery', (t) => {
+  const h = createHistory({ mode: 'memory', sync: true })
+  const calls: string[] = []
+  const dispose = h.listen((url) => calls.push(url))
+
+  h.replaceSilent('/initial')
+  t.is(h.getUrl(), '/initial')
+  h.push('/one')
+  h.push('/two')
+  h.replace('/three')
+  h.replaceSilent('/four')
+
+  t.is(h.getUrl(), '/four')
+  t.deepEqual(calls, ['/one', '/two', '/three'])
+  dispose()
+})
+
 test('an old disposer cannot remove a newer listener', (t) => {
   const calls: string[] = []
   const h = createHistory({ mode: 'memory', sync: true })

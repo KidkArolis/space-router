@@ -3,7 +3,7 @@ export function createHistory(options = {}) {
     let mode = options.mode || 'history';
     let active;
     let seq = 0;
-    const memory = [];
+    let memoryUrl = '';
     if (typeof window === 'undefined') {
         mode = 'memory';
     }
@@ -71,31 +71,18 @@ export function createHistory(options = {}) {
             scheduleEmit(false);
         }
         else if (mode === 'memory') {
-            if (replace && memory.length) {
-                memory[memory.length - 1] = url;
-            }
-            else {
-                memory.push(url);
-            }
+            memoryUrl = url;
             scheduleEmit(false);
         }
     }
     function getUrl() {
         if (mode === 'memory') {
-            return memory[memory.length - 1] ?? '';
+            return memoryUrl;
         }
-        const hash = getHash();
         if (mode === 'hash') {
-            return hash === '' ? '/' : hash;
+            return location.hash.slice(1) || '/';
         }
-        let url = location.pathname + location.search;
-        if (hash !== '') {
-            url += '#' + hash;
-        }
-        return url;
-    }
-    function getHash() {
-        return location.hash.slice(1);
+        return location.pathname + location.search + location.hash;
     }
     // replace the current entry without emitting — for callers that have
     // already committed a route and only need the url to agree. replaceState
@@ -114,12 +101,7 @@ export function createHistory(options = {}) {
                 active.hashUrl = location.href;
         }
         else if (mode === 'memory') {
-            if (memory.length) {
-                memory[memory.length - 1] = url;
-            }
-            else {
-                memory.push(url);
-            }
+            memoryUrl = url;
         }
     }
     return {

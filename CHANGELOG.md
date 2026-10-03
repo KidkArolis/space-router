@@ -1,5 +1,10 @@
-## 2.1.1
+## 3.0.0
 
+- **Breaking:** the default query codec now uses native `URLSearchParams` semantics. Spaces stringify as `+` instead of `%20`, and punctuation such as `~`, `!`, `'`, `(`, and `)` is percent-encoded. Malformed UTF-8 decodes with replacement characters instead of preserving the entire raw value; lone surrogates stringify with replacement characters instead of throwing. Path parameter encoding is unchanged.
+- Query parsing now accepts an optional leading `?`, safely preserves prototype-named keys such as `__proto__`, and still keeps the last value for duplicate keys. Stringification still skips `undefined` and converts other values to strings. The injectable `qs` option remains available for applications requiring a different codec.
+- Matchers invoke the query parser only after a path matches, rather than for every candidate. Unmatched URLs no longer invoke custom parsers.
+- Memory mode stores only the current URL, not an inaccessible navigation stack. Push, replace, silent replacement, and notification behavior are unchanged.
+- Simplify history-mode URL reading and remove redundant matching aliases.
 - preserve query values and fragments when normalizing trailing slashes.
 - keep the current pathname when merging a catch-all route.
 - coalesce hash navigations and prevent queued hash events from leaking across subscriptions or mislabeling traversals.
