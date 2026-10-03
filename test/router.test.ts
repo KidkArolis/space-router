@@ -306,6 +306,22 @@ test('redirects', (t) => {
   dispose()
 })
 
+test('empty string redirects resolve to root in literal and function forms', (t) => {
+  const destinations: (string | undefined)[] = []
+  const router = createRouter({ mode: 'memory', sync: true })
+  const dispose = router.listen(
+    [{ path: '/literal', redirect: '' }, { path: '/function', redirect: () => '' }, { path: '/' }],
+    (route) => destinations.push(route?.url),
+  )
+
+  router.navigate('/literal')
+  t.is(router.getUrl(), '/')
+  router.navigate('/function')
+  t.is(router.getUrl(), '/')
+  t.deepEqual(destinations, ['/', '/'])
+  dispose()
+})
+
 test('guards run parent-first and admitted guards continue to child redirects', (t) => {
   const destinations: string[] = []
   let admitted = false

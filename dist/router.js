@@ -131,7 +131,7 @@ export function getRouteRedirect(route) {
         const guarded = segment.guard?.(route);
         if (guarded !== undefined)
             return guarded;
-        if (segment.redirect) {
+        if (segment.redirect !== undefined) {
             return typeof segment.redirect === 'function' ? segment.redirect(route) : segment.redirect;
         }
     }

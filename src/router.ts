@@ -216,7 +216,7 @@ export function getRouteRedirect<Data>(route: Route<Data>): To | undefined {
   for (const segment of route.data) {
     const guarded = segment.guard?.(route)
     if (guarded !== undefined) return guarded
-    if (segment.redirect) {
+    if (segment.redirect !== undefined) {
       return typeof segment.redirect === 'function' ? segment.redirect(route) : segment.redirect
     }
   }
